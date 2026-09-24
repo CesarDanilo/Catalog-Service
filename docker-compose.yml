@@ -1,0 +1,91 @@
+name: catalog-service
+
+x-app-env: &app-env
+  NODE_ENV: ${NODE_ENV:-development}
+  PORT: 3333
+  HOST: 0.0.0.0
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/catalog?schema=public
+  REDIS_URL: redis://redis:6379
+  RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+  RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-1 minute}
+  CRAWLER_REQUEST_DELAY: ${CRAWLER_REQUEST_DELAY:-1000}
+  SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-false}
+
+services:
+  api:
+    build:
+      context: .
+      target: dev
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed && npm run dev"
+    environment: *app-env
+    ports:
+      - '3333:3333'
+    volumes:
+      # Hot reload em desenvolvimento: código montado, node_modules da imagem preservado.
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3333/health']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      target: dev
+    command: npm run worker
+    environment: *app-env
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      api:
+        # Garante que as migrations já foram aplicadas pela API.
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: catalog
+    ports:
+      # 5433 no host para não conflitar com outro Postgres local na 5432.
+      - '5433:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d catalog']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory-policy noeviction
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:

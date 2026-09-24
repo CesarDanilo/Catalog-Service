@@ -1,0 +1,149 @@
+import { describe, expect, it } from 'vitest';
+import type { CrawlItem } from '../../src/modules/crawlers/crawler.types.js';
+import { normalizeProduct } from '../../src/modules/crawlers/normalizer/product.normalizer.js';
+import { RennerCrawler } from '../../src/modules/crawlers/renner/renner.crawler.js';
+import { mapRennerProduct } from '../../src/modules/crawlers/renner/renner.mapper.js';
+import {
+  extractProductIdFromUrl,
+  parseProductLinks,
+  parseRennerProductPage,
+} from '../../src/modules/crawlers/renner/renner.parser.js';
+import type { BrowserPool } from '../../src/modules/crawlers/shared/browser.js';
+import { AccessDeniedError, HttpClient } from '../../src/modules/crawlers/shared/http-client.js';
+import { parseSitemap } from '../../src/modules/crawlers/shared/sitemap.js';
+import { fakeFetch, readFixture } from '../helpers/fixtures.js';
+
+const BASE = 'https://www.lojasrenner.com.br';
+const PRODUCT_URL = `${BASE}/p/saida-de-praia-blusa-em-trico-com-manga-ampla-branco/-/A-931612620-br.lr`;
+const productHtml = readFixture('renner-product.html');
+const searchHtml = readFixture('renner-search-rendered.html');
+
+async function collect(items: AsyncIterable<CrawlItem>) {
+  const result: CrawlItem[] = [];
+  for await (const item of items) result.push(item);
+  return result;
+}
+
+function crawler(fetchFn: typeof fetch, renderedHtml = searchHtml) {
+  const browser = { renderHtml: async () => renderedHtml, close: async () => {} };
+  return new RennerCrawler({
+    http: new HttpClient({
+      userAgent: 'test',
+      timeoutMs: 1_000,
+      maxRetries: 1,
+      minDelayMs: 0,
+      fetchFn,
+    }),
+    browser: browser as unknown as BrowserPool,
+    userAgent: 'test',
+    timeoutMs: 1_000,
+  });
+}
+
+describe('Renner parser + mapper', () => {
+  it('extrai JSON-LD e __NEXT_DATA__ da página real', () => {
+    const page = parseRennerProductPage(productHtml);
+    expect(page.jsonLd.name).toBe('Saída de Praia Blusa em Tricô com Manga Ampla Branco');
+    expect(page.next).toMatchObject({
+      productId: '931612620',
+      listPrice: 139.9,
+      variants: 'Branco|G',
+    });
+  });
+
+  it('mapeia e normaliza o produto', () => {
+    const scraped = mapRennerProduct(parseRennerProductPage(productHtml), PRODUCT_URL);
+    expect(scraped).toMatchObject({
+      externalId: '931612620',
+      brand: 'Bossa Nossa',
+      color: 'Branco',
+      price: 139.9,
+      currency: 'BRL',
+      available: true,
+    });
+
+    const normalized = normalizeProduct(scraped);
+    expect(normalized).toMatchObject({
+      categorySlug: 'moda-praia',
+      gender: 'feminino',
+      color: 'branco',
+      originalPrice: null,
+      imageUrl: expect.stringMatching(/^https:\/\/img\.lojasrenner\.com\.br\//),
+    });
+    expect(normalized.images.length).toBeGreaterThan(1);
+  });
+
+  it('falha de forma explícita quando não há JSON-LD de produto', () => {
+    expect(() => parseRennerProductPage('<html><body>captcha</body></html>')).toThrow(/JSON-LD/);
+  });
+
+  it('extrai links de produto da busca renderizada', () => {
+    const links = parseProductLinks(searchHtml, BASE);
+    expect(links.length).toBeGreaterThan(5);
+    expect(
+      links.every((link) => /^https:\/\/www\.lojasrenner\.com\.br\/p\/.+-br\.lr$/.test(link)),
+    ).toBe(true);
+    expect(extractProductIdFromUrl(PRODUCT_URL)).toBe('931612620');
+  });
+
+  it('lê índice e urlset de sitemap', () => {
+    const index = parseSitemap(readFixture('renner-sitemap-index.xml'));
+    expect(index.sitemaps[0]).toBe(`${BASE}/detail0.xml`);
+    const urls = parseSitemap(readFixture('renner-sitemap-products.xml')).urls;
+    expect(urls).toHaveLength(30);
+  });
+});
+
+describe('RennerCrawler', () => {
+  it('crawl() percorre o sitemap e visita só produtos de vestuário/calçado', async () => {
+    const fetchFn = fakeFetch([
+      [
+        `${BASE}/sitemap.xml`,
+        () =>
+          new Response(
+            `<sitemapindex><sitemap><loc>${BASE}/detail3.xml</loc></sitemap></sitemapindex>`,
+          ),
+      ],
+      [`${BASE}/detail3.xml`, () => new Response(readFixture('renner-sitemap-products.xml'))],
+      [/\/p\//, () => new Response(productHtml)],
+    ]);
+    const items = await collect(crawler(fetchFn).crawl({ limit: 3 }));
+
+    expect(items).toHaveLength(3);
+    const visited = fetchFn.calls.filter((url) => url.includes('/p/'));
+    // "vichy-liftactiv-serum" e "mascara-de-limpeza" (cosméticos) não devem ser visitados.
+    expect(visited.some((url) => /vichy|mascara|funko/.test(url))).toBe(false);
+  });
+
+  it('crawl() respeita Source.config.categories', async () => {
+    const fetchFn = fakeFetch([
+      [`${BASE}/sitemap.xml`, () => new Response(readFixture('renner-sitemap-products.xml'))],
+      [/\/p\//, () => new Response(productHtml)],
+    ]);
+    await collect(crawler(fetchFn).crawl({ limit: 10, config: { categories: ['casacos'] } }));
+    const visited = fetchFn.calls.filter((url) => url.includes('/p/'));
+    expect(visited).toEqual([expect.stringContaining('cardigan-alongado-em-trico')]);
+  });
+
+  it('search() usa o browser só para links e lê produtos via HTTP', async () => {
+    const fetchFn = fakeFetch([[/\/p\//, () => new Response(productHtml)]]);
+    const items = await collect(crawler(fetchFn).search('camisa preta', { limit: 2 }));
+    expect(items).toHaveLength(2);
+    expect(items.every((item) => item.ok)).toBe(true);
+  });
+
+  it('registra falha por produto sem interromper o crawl', async () => {
+    const fetchFn = fakeFetch([[/\/p\//, () => new Response('<html>mudou</html>')]]);
+    const items = await collect(crawler(fetchFn).search('camisa', { limit: 2 }));
+    expect(items).toHaveLength(2);
+    expect(items.every((item) => !item.ok)).toBe(true);
+  });
+
+  it('interrompe o crawl quando a loja nega acesso (sem tentar contornar)', async () => {
+    const fetchFn = fakeFetch([[/\/p\//, () => new Response('forbidden', { status: 403 })]]);
+    await expect(collect(crawler(fetchFn).search('camisa', { limit: 2 }))).rejects.toBeInstanceOf(
+      AccessDeniedError,
+    );
+    expect(fetchFn.calls.filter((url) => url.includes('/p/'))).toHaveLength(1);
+  });
+});

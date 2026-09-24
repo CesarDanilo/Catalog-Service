@@ -1,0 +1,157 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Loja/fonte de produtos (Renner, C&A, Amazon...).
+model Source {
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String
+  /// Identificador estável usado para localizar o crawler no CrawlerRegistry.
+  slug          String    @unique
+  baseUrl       String
+  enabled       Boolean   @default(true)
+  /// Intervalo de sincronização automática em minutos (null = sem agendamento).
+  crawlInterval Int?
+  /// Limite de páginas/produtos por execução de crawl.
+  maxPages      Int?
+  /// Configuração livre específica da fonte (ex.: categorias a sincronizar).
+  config        Json?
+  lastSyncAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  products  Product[]
+  crawlJobs CrawlJob[]
+}
+
+/// Categorias hierárquicas (parentId aponta para a categoria pai).
+model Category {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  parentId  String?  @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
+  products Product[]
+
+  @@index([parentId])
+}
+
+enum ImageProcessingStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+  SKIPPED
+}
+
+model Product {
+  id         String  @id @default(uuid()) @db.Uuid
+  sourceId   String  @db.Uuid
+  /// Identificador do produto na fonte. (sourceId, externalId) é a identidade real do produto.
+  externalId String
+
+  name        String
+  /// Slug legível para URLs; NÃO é identificador global.
+  slug        String
+  description String?
+  brand       String?
+
+  categoryId String? @db.Uuid
+
+  gender String?
+  color  String?
+  size   String?
+
+  price         Decimal  @db.Decimal(12, 2)
+  originalPrice Decimal? @db.Decimal(12, 2)
+  currency      String   @default("BRL") @db.Char(3)
+
+  imageUrl              String?
+  imageCachedUrl        String?
+  imageProcessingStatus ImageProcessingStatus @default(PENDING)
+
+  productUrl String
+  available  Boolean @default(true)
+
+  /// Texto normalizado (minúsculo, sem acentos) usado pela busca. Gerado pelo normalizador.
+  searchText String @default("")
+
+  /// Payload original da fonte, apenas para debug/auditoria. Não usar em consultas.
+  rawData Json?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastScrapedAt DateTime @default(now())
+
+  source   Source         @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  category Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  images   ProductImage[]
+
+  @@unique([sourceId, externalId])
+  @@index([categoryId])
+  @@index([brand])
+  @@index([gender])
+  @@index([color])
+  @@index([price])
+  @@index([available])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([lastScrapedAt])
+}
+
+model ProductImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @db.Uuid
+  url       String
+  cachedUrl String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, position])
+}
+
+enum CrawlJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model CrawlJob {
+  id       String         @id @default(uuid()) @db.Uuid
+  sourceId String         @db.Uuid
+  status   CrawlJobStatus @default(PENDING)
+  /// Parâmetros usados na execução (ex.: query de busca, limite).
+  params   Json?
+
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  productsFound   Int @default(0)
+  productsCreated Int @default(0)
+  productsUpdated Int @default(0)
+  productsFailed  Int @default(0)
+
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  source Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId, createdAt])
+  @@index([status])
+}
