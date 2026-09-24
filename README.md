@@ -494,6 +494,25 @@ Checklist:
 - Autenticação: a API foi pensada para uso interno. Para expor publicamente, adicione um hook
   `onRequest` no escopo `/api/v1` em `app.ts` validando `X-API-Key` ou `Authorization: Bearer`.
 
+### Deploy com Docker (EC2)
+
+Use `docker-compose.prod.yml` (não o `docker-compose.yml`, que é de desenvolvimento):
+
+- código compilado, processos como usuário `node`, sem hot reload;
+- **nenhuma porta publicada** — Postgres, Redis e a API ficam fora da internet; o backend do
+  provador chama a API pela rede Docker compartilhada `aura-net` em `http://catalog-api:3333`;
+- migrations + seed rodam uma vez no serviço `migrate` antes de API/worker subirem.
+
+```bash
+docker network create aura-net                 # uma vez (compartilhada com o backend)
+cp .env.production.example .env.production     # preencher CATALOG_DB_PASSWORD
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+docker compose -f docker-compose.prod.yml --env-file .env.production ps
+```
+
+No backend: `CATALOG_SERVICE_URL=http://catalog-api:3333` e o serviço do backend conectado à
+rede `aura-net`.
+
 ## Adicionando uma nova loja
 
 Exemplo: `src/modules/crawlers/nova-loja/`.

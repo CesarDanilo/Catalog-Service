@@ -1,0 +1,111 @@
+# Produção (EC2) — diferente do docker-compose.yml de desenvolvimento:
+#   - código compilado (target `production`, `node dist/...`, usuário `node`), sem hot reload;
+#   - NENHUMA porta publicada: Postgres, Redis e a própria API ficam fora da internet. Só o
+#     backend do provador fala com a API, pela rede Docker compartilhada `aura-net`, no endereço
+#     http://catalog-api:3333 (ver CATALOG_SERVICE_URL no backend);
+#   - senha do Postgres obrigatória (sem padrão);
+#   - migrations + seed rodam UMA vez no serviço `migrate` (a imagem de produção não tem o CLI do
+#     Prisma nem o tsx), e só depois a API e o worker sobem.
+#
+# Uso (na EC2, dentro desta pasta):
+#   docker network create aura-net          # uma vez só (compartilhada com o backend)
+#   export CATALOG_DB_PASSWORD=...          # ou num arquivo .env.production (ver abaixo)
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+name: catalog-service
+
+x-app-env: &app-env
+  NODE_ENV: production
+  PORT: 3333
+  HOST: 0.0.0.0
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  # Ninguém chama esta API pelo navegador (só o backend, servidor-servidor) — CORS fechado.
+  CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+  DATABASE_URL: postgresql://catalog:${CATALOG_DB_PASSWORD:?defina CATALOG_DB_PASSWORD}@postgres:5432/catalog?schema=public
+  REDIS_URL: redis://redis:6379
+  RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-300}
+  RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-1 minute}
+  CRAWLER_REQUEST_DELAY: ${CRAWLER_REQUEST_DELAY:-1000}
+  # Sincronização periódica das lojas (cada fonte com `crawlInterval`) — mantém o catálogo atualizado.
+  SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+
+services:
+  migrate:
+    build:
+      context: .
+      target: deps
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed"
+    environment: *app-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    build:
+      context: .
+      target: production
+    command: node dist/server.js
+    environment: *app-env
+    networks:
+      default: {}
+      aura-net:
+        aliases: [catalog-api]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3333/health']
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      target: production
+    command: node dist/worker.js
+    environment: *app-env
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: catalog
+      POSTGRES_PASSWORD: ${CATALOG_DB_PASSWORD:?defina CATALOG_DB_PASSWORD}
+      POSTGRES_DB: catalog
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U catalog -d catalog']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    # noeviction: exigido pelo BullMQ (fila de crawl não pode perder job por falta de memória).
+    command: redis-server --appendonly yes --maxmemory-policy noeviction
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+networks:
+  aura-net:
+    external: true
+
+volumes:
+  postgres-data:
+  redis-data:

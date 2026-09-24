@@ -4,6 +4,8 @@ coverage
 .env
 .env.*
 !.env.example
+# Modelo das variáveis de produção (EC2) — o .env.production de verdade continua ignorado.
+!.env.production.example
 *.log
 .DS_Store
 # Artefatos de inspeção manual de crawlers
