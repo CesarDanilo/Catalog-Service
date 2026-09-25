@@ -1,5 +1,9 @@
 import type { ScrapedProduct } from '../crawler.types.js';
-import { extractProductIdFromUrl, type RennerProductPage } from './renner.parser.js';
+import {
+  extractProductIdFromUrl,
+  type RennerProductPage,
+  type RennerSearchCard,
+} from './renner.parser.js';
 
 const IN_STOCK = /schema\.org\/(InStock|LimitedAvailability|OnlineOnly)$/;
 
@@ -44,5 +48,25 @@ export function mapRennerProduct(page: RennerProductPage, pageUrl: string): Scra
         purchasable: next.purchasable,
       },
     },
+  };
+}
+
+/**
+ * Cartão da busca -> ScrapedProduct. O cartão não diz o gênero: vem do filtro de gênero com que
+ * a busca foi feita (masculino/feminino; nas duas = unissex). Cor e categoria saem do nome no
+ * normalizador.
+ */
+export function mapRennerSearchCard(card: RennerSearchCard, gender?: string): ScrapedProduct {
+  return {
+    externalId: card.externalId,
+    name: card.name,
+    ...(gender ? { gender } : {}),
+    price: card.price,
+    ...(card.listPrice !== undefined ? { originalPrice: card.listPrice } : {}),
+    currency: 'BRL',
+    ...(card.imageUrl ? { imageUrl: card.imageUrl, images: [card.imageUrl] } : {}),
+    productUrl: card.productUrl,
+    available: card.available,
+    rawData: { origin: 'search-card', listPrice: card.listPrice ?? null },
   };
 }

@@ -4,8 +4,20 @@ import { normalizeCategory } from '../normalizer/product.normalizer.js';
 import type { BrowserPool } from '../shared/browser.js';
 import { AccessDeniedError, type HttpClient } from '../shared/http-client.js';
 import { parseSitemap } from '../shared/sitemap.js';
-import { mapRennerProduct } from './renner.mapper.js';
-import { extractSlugText, parseProductLinks, parseRennerProductPage } from './renner.parser.js';
+import { mapRennerProduct, mapRennerSearchCard } from './renner.mapper.js';
+import {
+  extractSlugText,
+  parseProductLinks,
+  parseRennerProductPage,
+  parseSearchCards,
+  type RennerSearchCard,
+} from './renner.parser.js';
+
+/** Filtro de gênero da busca da Renner (`filtros=gender:Masculino;`) -> gênero do catálogo. */
+const SEARCH_GENDERS = [
+  ['Masculino', 'masculino'],
+  ['Feminino', 'feminino'],
+] as const;
 
 export const RENNER_DEFAULT_BASE_URL = 'https://www.lojasrenner.com.br';
 
@@ -21,8 +33,10 @@ export interface RennerCrawlerDeps {
  * Renner.
  * - crawl(): percorre o sitemap público de produtos (permitido pelo robots.txt) e visita
  *   apenas URLs cujo slug indica vestuário; cada página é lida via HTTP + Cheerio.
- * - search(): a página de busca (/b?Ntt=) é renderizada no cliente, então usa Playwright
- *   apenas para coletar os links; os produtos em si continuam sendo lidos via HTTP.
+ * - search(): a página de busca (/b?Ntt=) é renderizada no cliente (Playwright). Busca masculino
+ *   e feminino em paralelo (filtro de gênero da própria loja) e lê as peças direto dos cartões
+ *   (~40 por página em ~5s) — o cartão não diz o gênero, o filtro diz. Se a página mudar e não
+ *   houver cartões, cai no método antigo: links da busca + página de cada produto via HTTP.
  */
 export class RennerCrawler implements Crawler {
   readonly source = 'renner';
@@ -33,17 +47,34 @@ export class RennerCrawler implements Crawler {
   }
 
   async *search(query: string, options: CrawlOptions = {}): AsyncIterable<CrawlItem> {
+    const limit = options.limit ?? DEFAULT_CRAWL_LIMIT;
     const url = `${this.baseUrl}/b?Ntt=${encodeURIComponent(query.trim())}`;
-    const html = await this.deps.browser.renderHtml(url, {
+
+    const pages = await Promise.all(
+      SEARCH_GENDERS.map(([filter]) =>
+        this.render(`${url}&filtros=${encodeURIComponent(`gender:${filter};`)}`),
+      ),
+    );
+    const byGender = pages.map((html) => parseSearchCards(html, this.baseUrl));
+    const cards = mergeByGender(byGender);
+    if (cards.length > 0) {
+      for (const { card, gender } of cards.slice(0, limit)) {
+        yield { ok: true, product: mapRennerSearchCard(card, gender) };
+      }
+      return;
+    }
+
+    // Sem cartões (layout mudou?): método antigo, mais lento mas independente dos cartões.
+    const links = parseProductLinks(await this.render(url), this.baseUrl).slice(0, limit);
+    yield* this.fetchProducts(links);
+  }
+
+  private render(url: string): Promise<string> {
+    return this.deps.browser.renderHtml(url, {
       userAgent: this.deps.userAgent,
       timeoutMs: this.deps.timeoutMs,
       waitForSelector: 'a[href*="/p/"]',
     });
-    const links = parseProductLinks(html, this.baseUrl).slice(
-      0,
-      options.limit ?? DEFAULT_CRAWL_LIMIT,
-    );
-    yield* this.fetchProducts(links);
   }
 
   /**
@@ -93,4 +124,35 @@ export class RennerCrawler implements Crawler {
       }
     }
   }
+}
+
+/**
+ * Junta as buscas por gênero intercalando (o limite fica dividido entre os dois). Peça que
+ * aparece nas duas buscas é unissex.
+ */
+function mergeByGender(
+  byGender: RennerSearchCard[][],
+): Array<{ card: RennerSearchCard; gender: string }> {
+  const genders = new Map<string, Set<string>>();
+  byGender.forEach((cards, index) => {
+    for (const card of cards) {
+      const set = genders.get(card.externalId) ?? new Set<string>();
+      set.add(SEARCH_GENDERS[index]![1]);
+      genders.set(card.externalId, set);
+    }
+  });
+
+  const merged: Array<{ card: RennerSearchCard; gender: string }> = [];
+  const emitted = new Set<string>();
+  const longest = Math.max(0, ...byGender.map((cards) => cards.length));
+  for (let i = 0; i < longest; i++) {
+    for (const cards of byGender) {
+      const card = cards[i];
+      if (!card || emitted.has(card.externalId)) continue;
+      emitted.add(card.externalId);
+      const found = genders.get(card.externalId)!;
+      merged.push({ card, gender: found.size > 1 ? 'unissex' : [...found][0]! });
+    }
+  }
+  return merged;
 }
