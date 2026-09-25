@@ -117,6 +117,21 @@ describe('CrawlRunner', () => {
     expect(crawlJobs.markRunning).not.toHaveBeenCalled();
   });
 
+  it('trava por modo: sincronização e busca da mesma fonte usam travas diferentes', async () => {
+    const { runner, locks, crawlJobs } = setup([]);
+    await runner.run('j1');
+    crawlJobs.findById.mockResolvedValueOnce({
+      id: 'j2',
+      sourceId: 's1',
+      status: 'PENDING',
+      params: { mode: 'search', query: 'camisa' },
+    } as never);
+    await runner.run('j2');
+    const keys = locks.acquire.mock.calls.map((call) => (call as unknown as [string])[0]);
+    expect(keys[0]).toMatch(/^catalog:lock:crawl:/);
+    expect(keys[1]).toMatch(/^catalog:lock:search:/);
+  });
+
   it('marca FAILED com estatísticas parciais e permite retry em erro transitório', async () => {
     const { runner, crawlJobs, release } = setup(async function* () {
       yield { ok: true, product: product('1') } as CrawlItem;

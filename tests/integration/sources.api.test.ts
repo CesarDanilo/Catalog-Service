@@ -125,6 +125,27 @@ describe('sources API', () => {
     expect(second.json().error.code).toBe('CRAWL_ALREADY_RUNNING');
   });
 
+  it('busca sob demanda não é bloqueada pela sincronização completa (e vice-versa)', async () => {
+    await prisma.crawlJob.deleteMany({ where: { sourceId: sources.ca.id } });
+    const crawl = await app.inject({
+      method: 'POST',
+      url: `/api/v1/sources/${sources.ca.id}/sync`,
+    });
+    expect(crawl.statusCode).toBe(202);
+    const search = await app.inject({
+      method: 'POST',
+      url: `/api/v1/sources/${sources.ca.id}/sync`,
+      payload: { mode: 'search', query: 'camiseta' },
+    });
+    expect(search.statusCode).toBe(202);
+    const secondSearch = await app.inject({
+      method: 'POST',
+      url: `/api/v1/sources/${sources.ca.id}/sync`,
+      payload: { mode: 'search', query: 'vestido' },
+    });
+    expect(secondSearch.statusCode).toBe(409);
+  });
+
   it('fila indisponível -> 502 e CrawlJob marcado como FAILED', async () => {
     queue.fail = true;
     const response = await app.inject({

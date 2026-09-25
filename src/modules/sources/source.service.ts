@@ -67,7 +67,7 @@ export class SourceService {
         `No crawler registered for source "${source.slug}"`,
       );
     }
-    const active = await this.deps.crawlJobs.findActiveBySource(source.id);
+    const active = await this.deps.crawlJobs.findActiveBySource(source.id, body.mode);
     if (active) {
       throw new ConflictError(
         'CRAWL_ALREADY_RUNNING',

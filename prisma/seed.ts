@@ -45,8 +45,28 @@ const SOURCES = [
     baseUrl: 'https://www.cea.com.br',
     enabled: true,
     crawlInterval: 360,
-    maxPages: 100,
-    config: { categories: ['moda-feminina/roupas', 'moda-masculina/roupas'] },
+    // Total de peças por sincronização, dividido igualmente entre as subcategorias (250 cada).
+    // Subcategoria em vez de "moda-feminina/roupas": a API VTEX para em 2.500 itens por caminho,
+    // e o caminho geral trazia quase só blusas (as primeiras da lista).
+    maxPages: 3500,
+    config: {
+      categories: [
+        'moda-feminina/roupas/blusas',
+        'moda-feminina/roupas/calcas',
+        'moda-feminina/roupas/casacos',
+        'moda-feminina/roupas/macacoes',
+        'moda-feminina/roupas/saias',
+        'moda-feminina/roupas/shorts',
+        'moda-feminina/roupas/vestidos',
+        'moda-masculina/roupas/blusas',
+        'moda-masculina/roupas/camisas',
+        'moda-masculina/roupas/camisetas',
+        'moda-masculina/roupas/casacos',
+        'moda-masculina/roupas/bermudas',
+        'moda-masculina/roupas/calcas',
+        'moda-masculina/roupas/macacoes',
+      ],
+    },
   },
   {
     // Desabilitada: requer integração autorizada (API oficial/afiliados). Ver README.

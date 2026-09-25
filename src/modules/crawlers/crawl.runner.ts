@@ -57,7 +57,10 @@ export class CrawlRunner {
     const crawler = registry.get(source.slug);
     if (!crawler) return this.abort(crawlJobId, `No crawler registered for "${source.slug}"`);
 
-    const lock = await locks.acquire(`catalog:lock:crawl:${source.id}`, LOCK_TTL_MS);
+    const params: CrawlJobParams = job.params ?? { mode: 'crawl' };
+    // Trava por fonte E modo: a sincronização completa não bloqueia a busca sob demanda.
+    const lockKey = `catalog:lock:${params.mode === 'search' ? 'search' : 'crawl'}:${source.id}`;
+    const lock = await locks.acquire(lockKey, LOCK_TTL_MS);
     if (!lock) {
       return this.abort(crawlJobId, `Another crawl is already running for "${source.slug}"`);
     }
@@ -75,7 +78,6 @@ export class CrawlRunner {
       await crawlJobs.markRunning(crawlJobId);
       logger.info({ ...log, params: job.params }, 'crawl started');
 
-      const params: CrawlJobParams = job.params ?? { mode: 'crawl' };
       const options: CrawlOptions = {
         limit: params.limit ?? source.maxPages ?? DEFAULT_CRAWL_LIMIT,
         config: (source.config as Record<string, unknown> | null) ?? {},

@@ -1,6 +1,6 @@
 import type { CrawlJob, Prisma, PrismaClient } from '@prisma/client';
 import { toOffset, type PaginationParams } from '../../shared/utils/pagination.js';
-import type { CrawlJobDto, CrawlJobParams, CrawlStats } from './crawl-job.types.js';
+import type { CrawlJobDto, CrawlJobParams, CrawlMode, CrawlStats } from './crawl-job.types.js';
 
 /** Um job sem progresso há mais tempo que isso é considerado abandonado (worker caiu). */
 export const STALE_JOB_MS = 30 * 60 * 1000;
@@ -20,8 +20,16 @@ export class CrawlJobRepository {
     return job ? toDto(job) : null;
   }
 
-  async findActiveBySource(sourceId: string): Promise<CrawlJobDto | null> {
-    const job = await this.prisma.crawlJob.findFirst({
+  /**
+   * Job ativo da fonte NO MESMO MODO: a sincronização completa (crawl, minutos) e a busca sob
+   * demanda (search, segundos) não se bloqueiam — senão a C&A ficava "ocupada" pra busca do
+   * provador durante toda a sincronização.
+   */
+  async findActiveBySource(
+    sourceId: string,
+    mode: CrawlMode = 'crawl',
+  ): Promise<CrawlJobDto | null> {
+    const jobs = await this.prisma.crawlJob.findMany({
       where: {
         sourceId,
         status: { in: ['PENDING', 'RUNNING'] },
@@ -29,7 +37,8 @@ export class CrawlJobRepository {
       },
       orderBy: { createdAt: 'desc' },
     });
-    return job ? toDto(job) : null;
+    const active = jobs.map(toDto).find((job) => (job.params?.mode ?? 'crawl') === mode);
+    return active ?? null;
   }
 
   async listBySource(
