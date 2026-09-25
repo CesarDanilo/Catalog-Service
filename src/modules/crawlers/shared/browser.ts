@@ -39,6 +39,42 @@ export class BrowserPool {
     }
   }
 
+  /**
+   * Renderiza a página e devolve o JSON de uma resposta que a PRÓPRIA página busca ao carregar
+   * (ex.: a API de busca que o site usa pra montar a vitrine). Nenhuma requisição extra: é o mesmo
+   * tráfego de uma visita normal — só lemos o que o navegador já recebeu, em vez de esperar a
+   * vitrine desenhar (preço, por exemplo, só aparece quando o cartão entra na tela). `null` se a
+   * resposta não vier no prazo.
+   */
+  async captureJson(
+    url: string,
+    options: Omit<RenderOptions, 'waitForSelector'> & { responseUrl: RegExp },
+  ): Promise<unknown> {
+    const browser = await this.getBrowser();
+    const context = await browser.newContext({ userAgent: options.userAgent, locale: 'pt-BR' });
+    try {
+      const page = await context.newPage();
+      await page.route('**/*', (route) =>
+        ['image', 'font', 'media', 'stylesheet'].includes(route.request().resourceType())
+          ? route.abort()
+          : route.continue(),
+      );
+      const captured = page
+        .waitForResponse(
+          (response) => options.responseUrl.test(response.url()) && response.status() === 200,
+          { timeout: options.timeoutMs },
+        )
+        .then((response) => response.json() as Promise<unknown>)
+        .catch(() => null);
+      await page.goto(url, { timeout: options.timeoutMs, waitUntil: 'domcontentloaded' });
+      return await captured;
+    } catch (error) {
+      throw new CrawlerError(`Failed to render ${url}: ${(error as Error).message}`);
+    } finally {
+      await context.close();
+    }
+  }
+
   async close(): Promise<void> {
     if (!this.browser) return;
     const browser = await this.browser.catch(() => null);

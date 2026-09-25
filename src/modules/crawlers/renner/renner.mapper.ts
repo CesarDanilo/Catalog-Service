@@ -1,8 +1,8 @@
 import type { ScrapedProduct } from '../crawler.types.js';
 import {
   extractProductIdFromUrl,
+  type RennerFindDoc,
   type RennerProductPage,
-  type RennerSearchCard,
 } from './renner.parser.js';
 
 const IN_STOCK = /schema\.org\/(InStock|LimitedAvailability|OnlineOnly)$/;
@@ -52,21 +52,32 @@ export function mapRennerProduct(page: RennerProductPage, pageUrl: string): Scra
 }
 
 /**
- * Cartão da busca -> ScrapedProduct. O cartão não diz o gênero: vem do filtro de gênero com que
- * a busca foi feita (masculino/feminino; nas duas = unissex). Cor e categoria saem do nome no
- * normalizador.
+ * Produto da resposta de busca -> ScrapedProduct. Traz o que a página de produto traria (gênero,
+ * cor, categoria, marca, preço cheio e com desconto, fotos, estoque) sem precisar abri-la.
  */
-export function mapRennerSearchCard(card: RennerSearchCard, gender?: string): ScrapedProduct {
+export function mapRennerFindDoc(doc: RennerFindDoc, baseUrl: string): ScrapedProduct {
+  const productUrl = new URL(doc.linkId.split('?')[0] ?? doc.linkId, baseUrl).toString();
+  const cents = doc.effectivePriceCents ?? doc.salePriceCents ?? doc.priceCents ?? 0;
+  const price = cents / 100;
+  const listPrice = doc.priceCents !== undefined ? doc.priceCents / 100 : undefined;
+  const images = [doc.imageId, doc.front_still_image_url, doc.second_image_url].filter(
+    (url, index, all): url is string => !!url && all.indexOf(url) === index,
+  );
+
   return {
-    externalId: card.externalId,
-    name: card.name,
-    ...(gender ? { gender } : {}),
-    price: card.price,
-    ...(card.listPrice !== undefined ? { originalPrice: card.listPrice } : {}),
+    externalId: extractProductIdFromUrl(productUrl) ?? doc.parent_product_id ?? doc.id,
+    name: doc.name,
+    ...(doc.brand ? { brand: doc.brand } : {}),
+    // "Feminino Masculino" -> unissex no normalizador.
+    ...(doc.gender?.length ? { gender: doc.gender.join(' ') } : {}),
+    ...(doc.parent_color?.[0] ? { color: doc.parent_color[0] } : {}),
+    ...(doc.parent_categories?.length ? { category: doc.parent_categories.join('/') } : {}),
+    price,
+    ...(listPrice !== undefined && listPrice > price ? { originalPrice: listPrice } : {}),
     currency: 'BRL',
-    ...(card.imageUrl ? { imageUrl: card.imageUrl, images: [card.imageUrl] } : {}),
-    productUrl: card.productUrl,
-    available: card.available,
-    rawData: { origin: 'search-card', listPrice: card.listPrice ?? null },
+    ...(images.length ? { imageUrl: images[0], images } : {}),
+    productUrl,
+    available: doc.in_stock !== false,
+    rawData: { origin: 'search-api', id: doc.id },
   };
 }

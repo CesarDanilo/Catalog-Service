@@ -86,66 +86,47 @@ export function parseProductLinks(html: string, baseUrl: string): string[] {
   return [...new Set(links)];
 }
 
-/** Cartão de produto da página de busca renderizada (/b?Ntt=). */
-export interface RennerSearchCard {
-  externalId: string;
-  productUrl: string;
-  name: string;
-  /** Preço atual (com desconto, quando houver). */
-  price: number;
-  /** Preço "de" riscado, só quando há desconto. */
-  listPrice?: number;
-  imageUrl?: string;
-  available: boolean;
-}
+/** Resposta da API de busca que a página /b?Ntt= da Renner chama ao carregar (provedor Algonomy). */
+export const RENNER_SEARCH_RESPONSE_URL = /\/rrserver\/api\/find\/v1\//;
 
-/** "R$ 1.299,90" -> 1299.9 */
-function parseBrl(text: string): number | undefined {
-  const digits = text.replace(/[^\d,]/g, '').replace(',', '.');
-  const value = Number(digits);
-  return digits && Number.isFinite(value) && value > 0 ? value : undefined;
-}
+const findDocSchema = z.object({
+  id: z.string(),
+  parent_product_id: z.string().optional(),
+  name: z.string().min(1),
+  linkId: z.string().min(1),
+  priceCents: z.number().optional(),
+  salePriceCents: z.number().optional(),
+  effectivePriceCents: z.number().optional(),
+  in_stock: z.boolean().optional(),
+  gender: z.array(z.string()).optional(),
+  parent_color: z.array(z.string()).optional(),
+  parent_categories: z.array(z.string()).optional(),
+  brand: z.string().optional(),
+  imageId: z.string().optional(),
+  front_still_image_url: z.string().optional(),
+  second_image_url: z.string().optional(),
+});
+
+export type RennerFindDoc = z.infer<typeof findDocSchema>;
 
 /**
- * Cartões da busca: cada um já traz nome, preço(s), foto e link — dá pra salvar a peça SEM abrir a
- * página de cada produto (~1,5s cada). Seletores por prefixo de classe (`ProductBox_*`): o sufixo
- * é hash do build do site e muda a cada deploy deles. Cartão incompleto é ignorado.
+ * Produtos da resposta de busca. Cada cor vem como um documento (mesmo `parent_product_id`) — fica
+ * só o primeiro, porque o produto do catálogo é o "pai" (o mesmo id do /A-<id>-br.lr do link).
+ * Documento fora do formato é ignorado (resposta de terceiro: não confiável).
  */
-export function parseSearchCards(html: string, baseUrl: string): RennerSearchCard[] {
-  const $ = cheerio.load(html);
-  const cards: RennerSearchCard[] = [];
+export function parseFindResponse(json: unknown): RennerFindDoc[] {
+  const placements = (json as { placements?: Array<{ docs?: unknown[] }> } | null)?.placements;
+  const docs: RennerFindDoc[] = [];
   const seen = new Set<string>();
-
-  $('a[class*="ProductBox_productBox"]').each((_, element) => {
-    const box = $(element);
-    const href = box.attr('href');
-    if (!href || !/-br\.lr/.test(href)) return;
-    const productUrl = new URL(href.split('?')[0] ?? href, baseUrl).toString();
-    const externalId = extractProductIdFromUrl(productUrl);
-    const name = (
-      box.find('h3').first().text() ||
-      box.find('img').first().attr('alt') ||
-      ''
-    ).trim();
-    const priceBox = box.find('[class*="ProductBox_price"]').first();
-    const listPrice = parseBrl(priceBox.find('[class*="listPrice"]').first().text());
-    const price = parseBrl(priceBox.find('span').not('[class*="listPrice"]').last().text());
-    if (!externalId || !name || price === undefined || seen.has(externalId)) return;
-    seen.add(externalId);
-
-    const availability = box.find('[class*="ProductBox_productAvailability"]').attr('class') ?? '';
-    const imageUrl = box.find('img').first().attr('src');
-    cards.push({
-      externalId,
-      productUrl,
-      name,
-      price,
-      ...(listPrice !== undefined && listPrice > price ? { listPrice } : {}),
-      ...(imageUrl ? { imageUrl: new URL(imageUrl, baseUrl).toString() } : {}),
-      available: /(^|\s)ProductBox_available__/.test(availability),
-    });
-  });
-  return cards;
+  for (const raw of (Array.isArray(placements) ? placements : []).flatMap((p) => p?.docs ?? [])) {
+    const parsed = findDocSchema.safeParse(raw);
+    if (!parsed.success) continue;
+    const key = parsed.data.parent_product_id ?? parsed.data.id;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    docs.push(parsed.data);
+  }
+  return docs;
 }
 
 /** ".../p/slug/-/A-931612620-br.lr" -> "931612620". */

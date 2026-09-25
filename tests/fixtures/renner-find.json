@@ -1,0 +1,123 @@
+{
+  "placements": [
+    {
+      "placement": "search_page.find",
+      "numFound": 122,
+      "docs": [
+        {
+          "id": "929412400-COR929412400-19-4007TCX",
+          "parent_product_id": "929412400",
+          "name": "Blazer Alongado em Alfaiataria com Prega nas Mangas",
+          "linkId": "/p/blazer-alongado-em-alfaiataria-com-prega-nas-mangas/-/A-929412400-br.lr?sku=929412434",
+          "priceCents": 19990,
+          "salePriceCents": 15990,
+          "effectivePriceCents": 15990,
+          "in_stock": true,
+          "inventory_status": "INSTOCK",
+          "gender": [
+            "Feminino"
+          ],
+          "parent_color": [
+            "Preto"
+          ],
+          "parent_categories": [
+            "Casacos e Jaquetas",
+            "Blazers"
+          ],
+          "categoryName": [
+            "Blazers",
+            "Casacos e Jaquetas",
+            "Feminino"
+          ],
+          "brand": "Blue Steel",
+          "imageId": "https://img.lojasrenner.com.br/item/929412451/medium/3.jpg",
+          "front_still_image_url": "https://img.lojasrenner.com.br/item/929412451/medium/13.jpg",
+          "second_image_url": "https://img.lojasrenner.com.br/item/929412451/medium/4.jpg",
+          "size": [
+            "P",
+            "PP",
+            "GG",
+            "G",
+            "M"
+          ],
+          "on_sale": true
+        },
+        {
+          "id": "931346632-COR931346632-19-4007TCX",
+          "parent_product_id": "931346632",
+          "name": "Blazer Alfaiatado Alongado com Franzido nas Mangas",
+          "linkId": "/p/blazer-alfaiatado-alongado-com-franzido-nas-mangas/-/A-931346632-br.lr?sku=931346641",
+          "priceCents": 21990,
+          "effectivePriceCents": 21990,
+          "in_stock": true,
+          "inventory_status": "INSTOCK",
+          "gender": [
+            "Feminino"
+          ],
+          "parent_color": [
+            "Preto"
+          ],
+          "parent_categories": [
+            "Casacos e Jaquetas",
+            "Blazers"
+          ],
+          "categoryName": [
+            "Blazers",
+            "Casacos e Jaquetas",
+            "Feminino"
+          ],
+          "brand": "Blue Steel",
+          "imageId": "https://img.lojasrenner.com.br/item/931346667/medium/3.jpg",
+          "front_still_image_url": "https://img.lojasrenner.com.br/item/931346667/medium/13.jpg",
+          "second_image_url": "https://img.lojasrenner.com.br/item/931346667/medium/4.jpg",
+          "size": [
+            "GG",
+            "P",
+            "PP",
+            "G",
+            "M"
+          ],
+          "on_sale": false
+        },
+        {
+          "id": "931346632-COR931346632-19-1518TCX",
+          "parent_product_id": "931346632",
+          "name": "Blazer Alfaiatado Alongado com Franzido nas Mangas",
+          "linkId": "/p/blazer-alfaiatado-alongado-com-franzido-nas-mangas/-/A-931346632-br.lr?sku=931346827",
+          "priceCents": 21990,
+          "effectivePriceCents": 21990,
+          "in_stock": true,
+          "inventory_status": "INSTOCK",
+          "gender": [
+            "Feminino"
+          ],
+          "parent_color": [
+            "Marrom"
+          ],
+          "parent_categories": [
+            "Casacos e Jaquetas",
+            "Blazers"
+          ],
+          "categoryName": [
+            "Blazers",
+            "Casacos e Jaquetas",
+            "Feminino"
+          ],
+          "brand": "Blue Steel",
+          "imageId": "https://img.lojasrenner.com.br/item/931346851/medium/3.jpg",
+          "front_still_image_url": "https://img.lojasrenner.com.br/item/931346851/medium/13.jpg",
+          "second_image_url": "https://img.lojasrenner.com.br/item/931346851/medium/4.jpg",
+          "size": [
+            "GG",
+            "PP",
+            "P",
+            "G",
+            "M"
+          ],
+          "on_sale": false
+        }
+      ]
+    }
+  ],
+  "status": "ok"
+}
