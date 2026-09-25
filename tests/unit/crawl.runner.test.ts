@@ -39,6 +39,7 @@ function setup(items: CrawlItem[] | (() => AsyncIterable<CrawlItem>), sourceOver
   const sources = { findById: vi.fn(async () => source), markSynced: vi.fn(async () => {}) };
   const seen = new Set<string>();
   const products = {
+    invalidateSearches: vi.fn(async () => {}),
     saveScraped: vi.fn(
       async (_s: string, p: { externalId: string }, _categoryId: string | null) => {
         const created = !seen.has(p.externalId);
@@ -94,6 +95,11 @@ describe('CrawlRunner', () => {
     expect(crawlJobs.markCompleted).toHaveBeenCalledWith('j1', stats);
     expect(sources.markSynced).toHaveBeenCalled();
     expect(products.saveScraped.mock.calls[0]?.[2]).toBe('cat-vestidos');
+    // Salvou produtos → buscas cacheadas descartadas ANTES de o job aparecer como COMPLETED.
+    expect(products.invalidateSearches).toHaveBeenCalledTimes(1);
+    expect(products.invalidateSearches.mock.invocationCallOrder[0]).toBeLessThan(
+      crawlJobs.markCompleted.mock.invocationCallOrder[0]!,
+    );
     expect(release).toHaveBeenCalled();
   });
 

@@ -16,7 +16,10 @@ export const CACHE_PREFIX = 'catalog';
 
 export const cacheKeys = {
   product: (id: string) => `${CACHE_PREFIX}:product:${id}`,
-  search: (filters: Record<string, unknown>) => `${CACHE_PREFIX}:search:${hashFilters(filters)}`,
+  /** `version` muda quando um crawl salva produtos — buscas cacheadas antes disso deixam de valer. */
+  search: (filters: Record<string, unknown>, version = 0) =>
+    `${CACHE_PREFIX}:search:${version}:${hashFilters(filters)}`,
+  searchVersion: () => `${CACHE_PREFIX}:search-version`,
   categories: () => `${CACHE_PREFIX}:categories`,
 };
 

@@ -77,6 +77,18 @@ describe('ProductService.list', () => {
   });
 });
 
+describe('ProductService.invalidateSearches', () => {
+  it('buscas cacheadas antes deixam de valer (resultado vazio não fica preso após um crawl)', async () => {
+    const { service, repository } = setup();
+    await service.list(query({ q: 'jaqueta' }));
+    await service.invalidateSearches();
+    repository.findMany.mockResolvedValueOnce({ items: [{ id: 'p1' }] as never, total: 1 });
+    const result = await service.list(query({ q: 'jaqueta' }));
+    expect(repository.findMany).toHaveBeenCalledTimes(2);
+    expect(result.pagination.total).toBe(1);
+  });
+});
+
 describe('ProductService.getById / saveScraped', () => {
   it('lança PRODUCT_NOT_FOUND', async () => {
     const { service } = setup();

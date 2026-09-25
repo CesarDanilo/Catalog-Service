@@ -23,7 +23,8 @@ describe('hashFilters / cacheKeys', () => {
     );
     expect(hashFilters({ q: 'camisa' })).not.toBe(hashFilters({ q: 'vestido' }));
     expect(cacheKeys.product('abc')).toBe('catalog:product:abc');
-    expect(cacheKeys.search({ q: 'x' })).toMatch(/^catalog:search:[a-f0-9]{32}$/);
+    expect(cacheKeys.search({ q: 'x' })).toMatch(/^catalog:search:0:[a-f0-9]{32}$/);
+    expect(cacheKeys.search({ q: 'x' }, 7)).toMatch(/^catalog:search:7:[a-f0-9]{32}$/);
   });
 });
 

@@ -87,6 +87,9 @@ export class CrawlRunner {
 
       await this.consume(items, source, stats, crawlJobId);
 
+      // Antes de marcar COMPLETED: quem espera o job (busca sob demanda) reconsulta logo em seguida.
+      if (stats.productsCreated + stats.productsUpdated > 0)
+        await this.deps.products.invalidateSearches();
       await crawlJobs.markCompleted(crawlJobId, stats);
       await sources.markSynced(source.id, new Date());
       logger.info({ ...log, ...stats, durationMs: Date.now() - startedAt }, 'crawl completed');

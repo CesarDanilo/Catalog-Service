@@ -21,6 +21,9 @@ import type {
   UpsertResult,
 } from './product.types.js';
 
+/** Bem maior que CACHE_TTL: se a versão expirar, as buscas da versão antiga já expiraram antes. */
+const SEARCH_VERSION_TTL_SECONDS = 24 * 60 * 60;
+
 export class ProductService {
   constructor(
     private readonly repository: ProductRepository,
@@ -38,12 +41,11 @@ export class ProductService {
     };
 
     // Filtros normalizados: "Preta" e "preto" compartilham a mesma entrada de cache.
-    const cacheKey = cacheKeys.search({
-      ...listQuery.filters,
-      sort: query.sort,
-      page: query.page,
-      pageSize: query.pageSize,
-    });
+    const version = (await this.cache.get<number>(cacheKeys.searchVersion())) ?? 0;
+    const cacheKey = cacheKeys.search(
+      { ...listQuery.filters, sort: query.sort, page: query.page, pageSize: query.pageSize },
+      version,
+    );
 
     return this.cache.getOrSet(cacheKey, env.CACHE_TTL, async () => {
       const { items, total } = await this.repository.findMany(listQuery);
@@ -69,6 +71,15 @@ export class ProductService {
     const result = await this.repository.upsert(sourceId, product, categoryId, scrapedAt);
     await this.cache.del(cacheKeys.product(result.id));
     return result;
+  }
+
+  /**
+   * Descarta todas as buscas cacheadas (troca a versão da chave). Chamado quando um crawl salva
+   * produtos: sem isto, a busca sob demanda do backend (pede o termo às lojas e reconsulta) recebia
+   * de novo o resultado VAZIO cacheado antes do crawl, por até CACHE_TTL.
+   */
+  async invalidateSearches(): Promise<void> {
+    await this.cache.set(cacheKeys.searchVersion(), Date.now(), SEARCH_VERSION_TTL_SECONDS);
   }
 
   private async resolveFilters(query: ListProductsQuery): Promise<ProductFilters> {
