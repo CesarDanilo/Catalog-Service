@@ -111,6 +111,22 @@ describe('CACrawler', () => {
     expect(fetchFn.calls.some((url) => url.includes('moda-masculina'))).toBe(true);
   });
 
+  it('falha numa categoria não derruba a sincronização: segue pras próximas', async () => {
+    const fetchFn = fakeFetch([
+      [/\/search\/moda-feminina\/roupas\?/, () => new Response('erro', { status: 500 })],
+      [/\/search\/moda-masculina\/roupas\?/, () => Response.json(fixture)],
+    ]);
+    const items = await collect(new CACrawler(client(fetchFn)).crawl({ limit: 4 }));
+
+    expect(items.filter((item) => !item.ok)).toHaveLength(1);
+    expect(items.filter((item) => item.ok).length).toBeGreaterThan(0);
+  });
+
+  it('todas as categorias falhando -> o crawl falha (pode ser repetido)', async () => {
+    const fetchFn = fakeFetch([[/\/search\//, () => new Response('erro', { status: 500 })]]);
+    await expect(collect(new CACrawler(client(fetchFn)).crawl({ limit: 4 }))).rejects.toThrow();
+  });
+
   it('usa as categorias configuradas na Source', async () => {
     const fetchFn = fakeFetch([[/\/search\/moda-infantil\?/, () => Response.json([])]]);
     await collect(

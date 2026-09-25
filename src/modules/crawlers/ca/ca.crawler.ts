@@ -1,6 +1,6 @@
 import type { Crawler } from '../crawler.interface.js';
 import { DEFAULT_CRAWL_LIMIT, type CrawlItem, type CrawlOptions } from '../crawler.types.js';
-import type { HttpClient } from '../shared/http-client.js';
+import { AccessDeniedError, type HttpClient } from '../shared/http-client.js';
 import { mapVtexProduct } from './ca.mapper.js';
 import { parseResourcesTotal, parseVtexSearchResponse } from './ca.parser.js';
 
@@ -39,15 +39,33 @@ export class CACrawler implements Crawler {
     // Divide o limite entre as categorias para não sincronizar só a primeira.
     const perCategory = Math.max(1, Math.ceil(limit / categories.length));
     let produced = 0;
+    let lastError: unknown;
+    let failedCategories = 0;
 
     for (const category of categories) {
       const path = category.split('/').map(encodeURIComponent).join('/');
-      for await (const item of this.paginate(path, Math.min(perCategory, limit - produced))) {
-        yield item;
-        produced++;
+      try {
+        for await (const item of this.paginate(path, Math.min(perCategory, limit - produced))) {
+          yield item;
+          produced++;
+        }
+      } catch (error) {
+        // Loja bloqueou: para tudo (insistir em outras categorias só piora).
+        if (error instanceof AccessDeniedError) throw error;
+        // Falha passageira numa página (a VTEX devolve 500 de vez em quando) não derruba a
+        // sincronização inteira — registra como falha e segue pra próxima categoria.
+        lastError = error;
+        failedCategories++;
+        yield {
+          ok: false,
+          reference: `${this.baseUrl}/${category}`,
+          error: error instanceof Error ? error.message : String(error),
+        };
       }
       if (produced >= limit) return;
     }
+    // Todas falharam (rede fora, API mudou): aí sim o job falha e pode ser repetido.
+    if (failedCategories === categories.length && lastError) throw lastError;
   }
 
   private async *paginate(path: string, limit: number): AsyncIterable<CrawlItem> {
