@@ -1,15 +1,15 @@
 # Produção (EC2) — diferente do docker-compose.yml de desenvolvimento:
 #   - código compilado (target `production`, `node dist/...`, usuário `node`), sem hot reload;
-#   - NENHUMA porta publicada: Postgres, Redis e a própria API ficam fora da internet. Só o
-#     backend do provador fala com a API, pela rede Docker compartilhada `aura-net`, no endereço
-#     http://catalog-api:3333 (ver CATALOG_SERVICE_URL no backend);
+#   - Postgres e Redis SEM porta publicada. A API publica a 3333 só no IP definido em
+#     CATALOG_API_BIND (padrão 127.0.0.1): na EC2 do catálogo, use o IP PRIVADO da instância, e o
+#     backend (outra EC2, mesma VPC) chama http://<ip-privado>:3333 (CATALOG_SERVICE_URL no
+#     backend). O Security Group libera a 3333 só pro Security Group do backend;
 #   - senha do Postgres obrigatória (sem padrão);
 #   - migrations + seed rodam UMA vez no serviço `migrate` (a imagem de produção não tem o CLI do
 #     Prisma nem o tsx), e só depois a API e o worker sobem.
 #
 # Uso (na EC2, dentro desta pasta):
-#   docker network create aura-net          # uma vez só (compartilhada com o backend)
-#   export CATALOG_DB_PASSWORD=...          # ou num arquivo .env.production (ver abaixo)
+#   cp .env.production.example .env.production   # preencher CATALOG_DB_PASSWORD e CATALOG_API_BIND
 #   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 name: catalog-service
 
@@ -46,10 +46,9 @@ services:
       target: production
     command: node dist/server.js
     environment: *app-env
-    networks:
-      default: {}
-      aura-net:
-        aliases: [catalog-api]
+    ports:
+      # Nunca 0.0.0.0: a API não tem autenticação (uso interno) — só o IP privado da EC2.
+      - '${CATALOG_API_BIND:-127.0.0.1}:3333:3333'
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -101,10 +100,6 @@ services:
       timeout: 3s
       retries: 10
     restart: unless-stopped
-
-networks:
-  aura-net:
-    external: true
 
 volumes:
   postgres-data:

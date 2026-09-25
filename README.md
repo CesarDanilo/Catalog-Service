@@ -499,19 +499,21 @@ Checklist:
 Use `docker-compose.prod.yml` (não o `docker-compose.yml`, que é de desenvolvimento):
 
 - código compilado, processos como usuário `node`, sem hot reload;
-- **nenhuma porta publicada** — Postgres, Redis e a API ficam fora da internet; o backend do
-  provador chama a API pela rede Docker compartilhada `aura-net` em `http://catalog-api:3333`;
+- Postgres e Redis **sem porta publicada**; a API publica a 3333 só no IP de `CATALOG_API_BIND`
+  (na EC2, o IP **privado** da instância — nunca `0.0.0.0`, a API não tem autenticação);
+- o catálogo roda numa EC2 própria, na mesma VPC do backend: o Security Group libera a porta
+  3333 só para o Security Group do backend;
 - migrations + seed rodam uma vez no serviço `migrate` antes de API/worker subirem.
 
 ```bash
-docker network create aura-net                 # uma vez (compartilhada com o backend)
-cp .env.production.example .env.production     # preencher CATALOG_DB_PASSWORD
+cp .env.production.example .env.production     # preencher CATALOG_DB_PASSWORD e CATALOG_API_BIND
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 docker compose -f docker-compose.prod.yml --env-file .env.production ps
 ```
 
-No backend: `CATALOG_SERVICE_URL=http://catalog-api:3333` e o serviço do backend conectado à
-rede `aura-net`.
+Em instância pequena (t3.micro, 1 GB), crie swap antes do build (a imagem instala o Chromium).
+
+No backend: `CATALOG_SERVICE_URL=http://<ip-privado-do-catálogo>:3333`.
 
 ## Adicionando uma nova loja
 
