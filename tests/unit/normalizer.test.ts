@@ -26,6 +26,9 @@ describe('normalizeGender', () => {
     ['Camiseta Unissex', 'unissex'],
     ['Conjunto Infantil Menina', 'infantil'],
     ['Tênis masculino e feminino', 'unissex'],
+    ['Camisetas Masculinas Kit 3', 'masculino'],
+    ['Blusas Femininas', 'feminino'],
+    ['Tênis Adidas VL Court Base Mascuino ID3712 Preto', 'masculino'],
   ])('%s -> %s', (text, expected) => {
     expect(normalizeGender(text)).toBe(expected);
   });

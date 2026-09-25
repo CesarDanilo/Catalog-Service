@@ -12,6 +12,13 @@ export const listProductsQuerySchema = z
     q: z.string().trim().max(200).optional().describe('Termo de busca (ex.: "camisa preta")'),
     category: optionalText('Slug da categoria; inclui subcategorias (ex.: "vestidos")'),
     gender: optionalText('masculino | feminino | unissex | infantil (aceita sinônimos)'),
+    includeNeutral: z
+      .enum(['true', 'false'])
+      .transform((value) => value === 'true')
+      .optional()
+      .describe(
+        'Com gender=masculino/feminino, inclui também peças unissex e sem gênero identificado (bolsas, óculos, tênis...)',
+      ),
     brand: optionalText('Marca (comparação exata, sem diferenciar maiúsculas)'),
     color: optionalText('Cor (ex.: "preto"; aceita sinônimos como "preta")'),
     source: optionalText('Slug da fonte (ex.: "renner")'),

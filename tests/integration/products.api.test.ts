@@ -119,6 +119,36 @@ describe('GET /api/v1/products', () => {
     expect(names(await list(query))).toEqual(expected);
   });
 
+  it('includeNeutral: gênero aceita também peças unissex e sem gênero', async () => {
+    const source = await prisma.source.findUniqueOrThrow({ where: { slug: 'renner' } });
+    const neutral = await Promise.all(
+      [
+        scraped('n1', 'Tênis Casual Unissex Branco', 199.9),
+        scraped('n2', 'Bolsa Tiracolo Couro Preta', 149.9),
+        scraped('n3', 'Vestido Curto Feminino Azul', 99.9),
+      ].map((product) =>
+        container.services.products.saveScraped(
+          source.id,
+          normalizeProduct(product),
+          null,
+          new Date(),
+        ),
+      ),
+    );
+    try {
+      const strict = names(await list('?gender=masculino'));
+      expect(strict).not.toContain('Tênis Casual Unissex Branco');
+
+      const loose = names(await list('?gender=masculino&includeNeutral=true'));
+      expect(loose).toEqual(
+        expect.arrayContaining(['Tênis Casual Unissex Branco', 'Bolsa Tiracolo Couro Preta']),
+      );
+      expect(loose).not.toContain('Vestido Curto Feminino Azul');
+    } finally {
+      await prisma.product.deleteMany({ where: { id: { in: neutral.map((n) => n.id) } } });
+    }
+  });
+
   it('categoria pai inclui subcategorias', async () => {
     expect((await list('?category=roupas')).pagination.total).toBe(4);
     expect((await list('?category=inexistente')).pagination.total).toBe(0);

@@ -9,6 +9,10 @@ export type Gender = (typeof GENDERS)[number];
 export const GENDER_KEYWORDS: Record<string, Gender> = {
   masculino: 'masculino',
   masculina: 'masculino',
+  masculinos: 'masculino',
+  masculinas: 'masculino',
+  // Erro de digitação que aparece em nomes reais da Renner ("Tênis ... Mascuino").
+  mascuino: 'masculino',
   masc: 'masculino',
   homem: 'masculino',
   homens: 'masculino',
@@ -16,6 +20,8 @@ export const GENDER_KEYWORDS: Record<string, Gender> = {
   male: 'masculino',
   feminino: 'feminino',
   feminina: 'feminino',
+  femininos: 'feminino',
+  femininas: 'feminino',
   fem: 'feminino',
   mulher: 'feminino',
   mulheres: 'feminino',

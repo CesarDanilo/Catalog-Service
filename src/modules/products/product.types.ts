@@ -11,6 +11,8 @@ export interface ProductFilters {
   query?: string;
   categoryIds?: string[];
   gender?: string;
+  /** Com `gender`, aceita também unissex e gênero desconhecido (null). */
+  includeNeutralGender?: boolean;
   brand?: string;
   color?: string;
   source?: string;

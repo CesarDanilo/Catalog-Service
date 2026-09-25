@@ -185,7 +185,18 @@ export class ProductRepository {
           : Prisma.sql`FALSE`,
       );
     }
-    if (filters.gender) conditions.push(Prisma.sql`p."gender" = ${filters.gender}`);
+    if (filters.gender) {
+      // Busca "masculino" aceitando unissex e sem gênero: bolsas, óculos e tênis quase nunca dizem
+      // o gênero no nome (~30% da Renner) e sumiam da busca do provador.
+      const neutral =
+        filters.includeNeutralGender &&
+        (filters.gender === 'masculino' || filters.gender === 'feminino');
+      conditions.push(
+        neutral
+          ? Prisma.sql`(p."gender" = ${filters.gender} OR p."gender" = 'unissex' OR p."gender" IS NULL)`
+          : Prisma.sql`p."gender" = ${filters.gender}`,
+      );
+    }
     if (filters.color) conditions.push(Prisma.sql`p."color" = ${filters.color}`);
     if (filters.brand) conditions.push(Prisma.sql`LOWER(p."brand") = LOWER(${filters.brand})`);
     if (filters.source) conditions.push(Prisma.sql`s."slug" = ${filters.source}`);
