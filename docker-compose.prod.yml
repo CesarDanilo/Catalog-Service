@@ -25,6 +25,9 @@ x-app-env: &app-env
   RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-300}
   RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-1 minute}
   CRAWLER_REQUEST_DELAY: ${CRAWLER_REQUEST_DELAY:-1000}
+  # Jobs simultâneos no worker. 2 = uma loja não espera a outra: a busca sob demanda do backend
+  # espera ~8s, e a C&A (~2s) não pode ficar na fila atrás da Renner (~30s, usa navegador).
+  CRAWLER_CONCURRENCY: ${CRAWLER_CONCURRENCY:-2}
   # Sincronização periódica das lojas (cada fonte com `crawlInterval`) — mantém o catálogo atualizado.
   SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
 
