@@ -32,7 +32,8 @@ async function collect(items: AsyncIterable<CrawlItem>) {
 function crawler(fetchFn: typeof fetch, renderedHtml = searchHtml, captured: unknown = null) {
   const browser = {
     renderHtml: async () => renderedHtml,
-    captureJson: async () => captured,
+    captureJson: async (url: string) =>
+      typeof captured === 'function' ? (captured as (url: string) => unknown)(url) : captured,
     close: async () => {},
   };
   return new RennerCrawler({
@@ -46,7 +47,26 @@ function crawler(fetchFn: typeof fetch, renderedHtml = searchHtml, captured: unk
     browser: browser as unknown as BrowserPool,
     userAgent: 'test',
     timeoutMs: 1_000,
+    pageDelayMs: 0,
   });
+}
+
+/** Resposta de busca fake com `count` produtos de ids `${prefix}-1..count`. */
+function findResponse(prefix: string, count: number) {
+  return {
+    placements: [
+      {
+        docs: Array.from({ length: count }, (_, i) => ({
+          id: `${prefix}${i}-COR`,
+          parent_product_id: `${prefix}${i}`,
+          name: `Peça ${prefix} ${i}`,
+          linkId: `/p/peca-${prefix}-${i}/-/A-${prefix}${i}-br.lr`,
+          priceCents: 9990,
+          gender: ['Feminino'],
+        })),
+      },
+    ],
+  };
 }
 
 describe('Renner parser + mapper', () => {
@@ -211,5 +231,58 @@ describe('Renner resposta de busca', () => {
     expect(docs).toHaveLength(2);
     expect(mapRennerFindDoc(docs[1]!, BASE).originalPrice).toBeUndefined();
     expect(parseFindResponse(null)).toEqual([]);
+  });
+});
+
+describe('Renner sincronização por termos de busca', () => {
+  it('divide o limite entre os termos, pagina com &pagina=N e não repete peça', async () => {
+    const urls: string[] = [];
+    const renner = crawler(fakeFetch([]), searchHtml, (url: string) => {
+      urls.push(url);
+      if (url.includes('Ntt=vestido'))
+        return url.includes('pagina=2') ? findResponse('2', 40) : findResponse('1', 40);
+      // "saia": uma página só, com uma peça que já veio do "vestido".
+      if (url.includes('pagina=')) return findResponse('9', 0);
+      return {
+        placements: [
+          {
+            docs: [
+              ...findResponse('3', 5).placements[0]!.docs,
+              findResponse('1', 1).placements[0]!.docs[0],
+            ],
+          },
+        ],
+      };
+    });
+    const items = await collect(
+      renner.crawl({ limit: 120, config: { searchTerms: ['vestido', 'saia'] } }),
+    );
+
+    const ids = items.flatMap((item) => (item.ok ? [item.product.externalId] : []));
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.filter((id) => id.startsWith('1') || id.startsWith('2'))).toHaveLength(60);
+    expect(ids.filter((id) => id.startsWith('3'))).toHaveLength(5);
+    expect(urls.some((url) => url.includes('Ntt=vestido&pagina=2'))).toBe(true);
+  });
+
+  it('termo que falha vira falha registrada e os outros seguem', async () => {
+    const renner = crawler(fakeFetch([]), searchHtml, (url: string) => {
+      if (url.includes('Ntt=saia')) throw new Error('timeout');
+      return url.includes('pagina=') ? findResponse('9', 0) : findResponse('1', 3);
+    });
+    const items = await collect(
+      renner.crawl({ limit: 10, config: { searchTerms: ['saia', 'vestido'] } }),
+    );
+    expect(items.filter((item) => !item.ok)).toHaveLength(1);
+    expect(items.filter((item) => item.ok)).toHaveLength(3);
+  });
+
+  it('todos os termos falhando -> o crawl falha (pode ser repetido)', async () => {
+    const renner = crawler(fakeFetch([]), searchHtml, () => {
+      throw new Error('fora do ar');
+    });
+    await expect(
+      collect(renner.crawl({ limit: 10, config: { searchTerms: ['saia', 'vestido'] } })),
+    ).rejects.toThrow('fora do ar');
   });
 });
