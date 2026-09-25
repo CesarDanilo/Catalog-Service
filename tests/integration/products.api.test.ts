@@ -144,8 +144,36 @@ describe('GET /api/v1/products', () => {
         expect.arrayContaining(['Tênis Casual Unissex Branco', 'Bolsa Tiracolo Couro Preta']),
       );
       expect(loose).not.toContain('Vestido Curto Feminino Azul');
+
+      const all = names(await list('?q=tenis'));
+      expect(all).toContain('Tênis Casual Unissex Branco');
     } finally {
       await prisma.product.deleteMany({ where: { id: { in: neutral.map((n) => n.id) } } });
+    }
+  });
+
+  it('excludeGender=infantil esconde peças infantis (e mantém as sem gênero)', async () => {
+    const source = await prisma.source.findUniqueOrThrow({ where: { slug: 'ca' } });
+    const saved = await Promise.all(
+      [
+        scraped('k1', 'Camiseta Infantil Menino Dino Azul', 39.9),
+        scraped('k2', 'Camiseta Lisa Básica Cinza', 49.9),
+      ].map((product) =>
+        container.services.products.saveScraped(
+          source.id,
+          normalizeProduct(product),
+          null,
+          new Date(),
+        ),
+      ),
+    );
+    try {
+      expect(names(await list('?q=camiseta'))).toContain('Camiseta Infantil Menino Dino Azul');
+      const adults = names(await list('?q=camiseta&excludeGender=infantil'));
+      expect(adults).not.toContain('Camiseta Infantil Menino Dino Azul');
+      expect(adults).toContain('Camiseta Lisa Básica Cinza');
+    } finally {
+      await prisma.product.deleteMany({ where: { id: { in: saved.map((s) => s.id) } } });
     }
   });
 

@@ -11,6 +11,8 @@ export interface ProductFilters {
   query?: string;
   categoryIds?: string[];
   gender?: string;
+  /** Esconde este gênero (ex.: infantil); peças sem gênero continuam. */
+  excludeGender?: string;
   /** Com `gender`, aceita também unissex e gênero desconhecido (null). */
   includeNeutralGender?: boolean;
   brand?: string;

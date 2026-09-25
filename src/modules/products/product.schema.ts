@@ -12,6 +12,9 @@ export const listProductsQuerySchema = z
     q: z.string().trim().max(200).optional().describe('Termo de busca (ex.: "camisa preta")'),
     category: optionalText('Slug da categoria; inclui subcategorias (ex.: "vestidos")'),
     gender: optionalText('masculino | feminino | unissex | infantil (aceita sinônimos)'),
+    excludeGender: optionalText(
+      'Esconde peças deste gênero (ex.: "infantil"); peças sem gênero continuam aparecendo',
+    ),
     includeNeutral: z
       .enum(['true', 'false'])
       .transform((value) => value === 'true')

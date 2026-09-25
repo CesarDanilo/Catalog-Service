@@ -38,7 +38,7 @@ const SOURCES = [
     enabled: true,
     crawlInterval: 360,
     // Total por sincronização, dividido entre os termos (~100 cada, 40 por página de busca).
-    maxPages: 3000,
+    maxPages: 4000,
     // Sincroniza pela busca (rápida, peças completas) em vez do sitemap (uma página por peça).
     config: {
       searchTerms: [
@@ -72,6 +72,17 @@ const SOURCES = [
         'kimono',
         'jardineira',
         'sobretudo',
+        // Termos genéricos trazem mais roupa feminina na Renner — estes equilibram o masculino.
+        'camisa masculina',
+        'camiseta masculina',
+        'polo masculina',
+        'regata masculina',
+        'calça masculina',
+        'calça jeans masculina',
+        'bermuda masculina',
+        'short masculino',
+        'jaqueta masculina',
+        'moletom masculino',
       ],
     },
   },

@@ -197,6 +197,9 @@ export class ProductRepository {
           : Prisma.sql`p."gender" = ${filters.gender}`,
       );
     }
+    if (filters.excludeGender) {
+      conditions.push(Prisma.sql`(p."gender" IS NULL OR p."gender" <> ${filters.excludeGender})`);
+    }
     if (filters.color) conditions.push(Prisma.sql`p."color" = ${filters.color}`);
     if (filters.brand) conditions.push(Prisma.sql`LOWER(p."brand") = LOWER(${filters.brand})`);
     if (filters.source) conditions.push(Prisma.sql`s."slug" = ${filters.source}`);

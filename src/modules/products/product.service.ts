@@ -96,6 +96,10 @@ export class ProductService {
     if (normalizedQuery) filters.query = normalizedQuery;
     if (query.gender) filters.gender = normalizeGender(query.gender) ?? normalizeText(query.gender);
     if (query.gender && query.includeNeutral) filters.includeNeutralGender = true;
+    if (query.excludeGender) {
+      filters.excludeGender =
+        normalizeGender(query.excludeGender) ?? normalizeText(query.excludeGender);
+    }
     if (query.color) filters.color = normalizeColor(query.color) ?? normalizeText(query.color);
     if (query.category) {
       filters.categoryIds = await this.categoryService.resolveIdsWithDescendants(query.category);
