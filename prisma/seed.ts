@@ -22,12 +22,41 @@ const CATEGORY_TREE = [
       { name: 'Shorts', slug: 'shorts' },
       { name: 'Macacões', slug: 'macacoes' },
       { name: 'Casacos e Jaquetas', slug: 'casacos' },
+      { name: 'Moletons', slug: 'moletons' },
+      { name: 'Regatas', slug: 'regatas' },
       { name: 'Moda Praia', slug: 'moda-praia' },
       { name: 'Moda Íntima e Pijamas', slug: 'moda-intima' },
     ],
   },
-  { name: 'Calçados', slug: 'calcados', children: [] },
-  { name: 'Acessórios', slug: 'acessorios', children: [] },
+  {
+    name: 'Calçados',
+    slug: 'calcados',
+    children: [
+      { name: 'Tênis', slug: 'tenis' },
+      { name: 'Sapatos', slug: 'sapatos' },
+      { name: 'Botas', slug: 'botas' },
+      { name: 'Sandálias', slug: 'sandalias' },
+      { name: 'Chinelos', slug: 'chinelos' },
+      { name: 'Sapatilhas', slug: 'sapatilhas' },
+      { name: 'Slides', slug: 'slides' },
+    ],
+  },
+  {
+    name: 'Acessórios',
+    slug: 'acessorios',
+    children: [
+      { name: 'Bonés', slug: 'bones' },
+      { name: 'Chapéus', slug: 'chapeus' },
+      { name: 'Bolsas', slug: 'bolsas' },
+      { name: 'Mochilas', slug: 'mochilas' },
+      { name: 'Óculos', slug: 'oculos' },
+      { name: 'Cintos', slug: 'cintos' },
+      { name: 'Relógios', slug: 'relogios' },
+      { name: 'Carteiras', slug: 'carteiras' },
+      { name: 'Joias', slug: 'joias' },
+      { name: 'Bijuterias', slug: 'bijuterias' },
+    ],
+  },
 ];
 
 const SOURCES = [

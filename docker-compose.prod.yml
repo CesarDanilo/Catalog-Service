@@ -31,6 +31,10 @@ x-app-env: &app-env
   CRAWLER_CONCURRENCY: ${CRAWLER_CONCURRENCY:-3}
   # Sincronização periódica das lojas (cada fonte com `crawlInterval`) — mantém o catálogo atualizado.
   SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+  # Lojas desligadas sem mexer no banco (ex.: "amazon,ca") — ver .env.example.
+  CRAWLER_DISABLED_SOURCES: ${CRAWLER_DISABLED_SOURCES:-}
+  # Peça não vista numa sincronização completa há mais de N dias vira indisponível.
+  STALE_PRODUCT_DAYS: ${STALE_PRODUCT_DAYS:-3}
 
 services:
   migrate:

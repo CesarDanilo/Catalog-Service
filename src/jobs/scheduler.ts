@@ -13,12 +13,18 @@ export async function syncSchedules(
   queue: BullCrawlerQueue,
   sources: SourceRepository,
   logger: Logger,
+  /** Loja sem crawler (ex.: desligada em CRAWLER_DISABLED_SOURCES) não é agendada. */
+  hasCrawler: (slug: string) => boolean = () => true,
 ): Promise<void> {
   const scheduled = await sources.findScheduled();
   const wanted = new Set<string>();
 
   for (const source of scheduled) {
     if (!source.crawlInterval) continue;
+    if (!hasCrawler(source.slug)) {
+      logger.info({ source: source.slug }, 'sync not scheduled: no crawler (disabled?)');
+      continue;
+    }
     wanted.add(`sync:${source.slug}`);
     await queue.scheduleSync(source.slug, { sourceId: source.id }, source.crawlInterval);
     logger.info({ source: source.slug, everyMinutes: source.crawlInterval }, 'sync scheduled');

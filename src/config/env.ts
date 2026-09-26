@@ -29,6 +29,17 @@ const envSchema = z.object({
   CRAWLER_CONCURRENCY: z.coerce.number().int().min(1).max(10).default(1),
   CRAWLER_USER_AGENT: z.string().default('CatalogServiceBot/0.1'),
   SCHEDULER_ENABLED: booleanString.default(false),
+  /**
+   * Lojas desligadas por configuração (slugs separados por vírgula, ex.: "amazon,ca"): ficam fora
+   * do registro de crawlers — sync manual responde CRAWLER_NOT_AVAILABLE e o agendador não as
+   * agenda. Útil pra desligar uma loja sem mexer no banco (ex.: provider de API sem credencial).
+   */
+  CRAWLER_DISABLED_SOURCES: z.string().default(''),
+  /**
+   * Peça não vista numa sincronização completa há mais que isto (dias) vira indisponível — saiu
+   * da loja. Só roda depois de uma sincronização que terminou bem e achou peças.
+   */
+  STALE_PRODUCT_DAYS: z.coerce.number().int().min(1).max(90).default(3),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -50,6 +61,18 @@ function loadEnv(): Env {
 }
 
 export const env = loadEnv();
+
+/** "Amazon, ca" -> {"amazon", "ca"} */
+export function parseSourceList(value: string): ReadonlySet<string> {
+  return new Set(
+    value
+      .split(',')
+      .map((slug) => slug.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+export const disabledSources = parseSourceList(env.CRAWLER_DISABLED_SOURCES);
 
 export const corsOrigins = env.CORS_ORIGIN.split(',')
   .map((origin) => origin.trim())

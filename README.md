@@ -175,6 +175,8 @@ Variáveis do ambiente têm precedência sobre o arquivo `.env`.
 | `CRAWLER_CONCURRENCY`                  | `1`                           | Jobs simultâneos por worker                                        |
 | `CRAWLER_USER_AGENT`                   | `CatalogServiceBot/0.1 (...)` | User-Agent identificável dos crawlers                              |
 | `SCHEDULER_ENABLED`                    | `false`                       | Liga o agendamento periódico no worker                             |
+| `CRAWLER_DISABLED_SOURCES`             | (vazio)                       | Lojas desligadas sem mexer no banco (slugs por vírgula)            |
+| `STALE_PRODUCT_DAYS`                   | `3`                           | Dias sem ser vista numa sincronização pra peça virar indisponível  |
 
 Nunca versione `.env`, credenciais, tokens, cookies ou chaves de API (o `.gitignore` já exclui `.env`).
 
@@ -275,13 +277,30 @@ Fluxo: `Crawler (obtém) → Parser (interpreta HTML/JSON) → Mapper (ScrapedPr
 Os crawlers retornam `AsyncIterable<CrawlItem>`: cada item é um produto ou uma falha isolada,
 e os produtos são persistidos conforme chegam (sem carregar o catálogo inteiro em memória).
 
-### Status real das fontes (inspecionadas em 2026-09-23)
+### Fontes do catálogo (Catalog Sources) — verificadas em 2026-09-25
 
-| Fonte                 | Status                                        | Como funciona                                                                                                                                                                                                                                                                        |
-| --------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **C&A** (`ca`)        | ✅ Implementado e validado contra o site real | Catálogo público VTEX em JSON: `/api/catalog_system/pub/products/search/{termo ou categoria}?_from=&_to=`. Sem browser. `crawl()` percorre `Source.config.categories` (padrão: `moda-feminina/roupas`, `moda-masculina/roupas`)                                                      |
-| **Renner** (`renner`) | ✅ Implementado e validado contra o site real | `crawl()`: sitemap público de produtos → visita só URLs cujo slug indica vestuário/calçado → página do produto via HTTP + Cheerio (JSON-LD `Product` + `__NEXT_DATA__`). `search()`: a página `/b?Ntt=` é renderizada no cliente, então usa **Playwright** apenas para coletar links |
-| **Amazon** (`amazon`) | ⚠️ Adapter preparado, **sem coleta**          | Os termos de uso da Amazon não permitem scraping, e isso não é implementado. O `AmazonCrawler` depende de um `AmazonCatalogProvider` (API oficial, afiliados ou feed). Sem provedor, o job falha com erro claro e sem retry. A fonte vem **desabilitada** no seed                    |
+| Fonte                 | Tipo                                         | Status                                    | Como funciona / motivo                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --------------------- | -------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **C&A** (`ca`)        | Endpoint público da própria loja (VTEX JSON) | ✅ Ativa                                  | Não há API oficial de parceiros; usa o catálogo público VTEX da loja: `/api/catalog_system/pub/products/search/{termo ou categoria}?_from=&_to=` (parâmetros bloqueados no robots.txt não são usados). `crawl()` percorre `Source.config.categories` (subcategorias de roupas, 250 peças cada).                                                                                                                                                                                                                                                                                         |
+| **Renner** (`renner`) | Scraper (Playwright)                         | ✅ Ativa                                  | Não há API oficial. `search()` abre a página de busca `/b?Ntt=` (permitida no robots.txt) e lê a resposta de busca que **a própria página** recebe do provedor de busca da loja — peças completas (gênero, cor, categoria, preço, fotos, estoque). Esse provedor proíbe robôs no robots.txt dele, então **nunca é chamado direto**: é o mesmo tráfego de uma visita comum. `crawl()` com `Source.config.searchTerms` sincroniza por termos (`&pagina=N`, 1s entre páginas); sem termos, cai no sitemap. Sem a resposta de busca, cai no método antigo (links + página de cada produto). |
+| **Amazon** (`amazon`) | API oficial                                  | ⏸️ Aguardando aprovação de credenciais    | A Product Advertising API 5.0 foi **descontinuada em 30/04/2026 e desligada em 15/05/2026**; a substituta é a **Creators API** (OAuth 2.0). Nada implementado contra ela ainda — fica pra quando as credenciais forem aprovadas, testando contra a API real. Scraping da Amazon não é feito (termos de uso). Fonte **desabilitada** no seed; `AmazonCrawler` falha com erro claro e sem retry.                                                                                                                                                                                          |
+| **Mercado Livre**     | API oficial                                  | ⏸️ Pendente — não implementado            | A busca de anúncios por palavra-chave (`/sites/MLB/search`) responde **403 pra aplicativos de terceiros desde o início de 2026**, mesmo com token válido, sem substituto oficial. O que continua documentado (`/products/search`) é uma ferramenta de catálogo pra vendedores publicarem (nome, marca, atributos) e **não traz preço nem link de anúncio**. Validar ao vivo exige um app do Mercado Livre (OAuth).                                                                                                                                                                      |
+| **Riachuelo**         | —                                            | ⛔ Bloqueada pela loja — não implementado | O site responde **Access Denied (Akamai)** a acesso automatizado, até no `robots.txt`, de IP residencial e da AWS. Não contornamos bloqueios; sem ver a estrutura real, não há seletores a implementar.                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Centauro**          | —                                            | ⛔ Bloqueada pela loja — não implementado | Mesmo caso da Riachuelo: **Access Denied (Akamai)** até no `robots.txt`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+
+**Peças que saíram da loja:** depois de cada sincronização completa (`crawl`) que terminou bem e
+achou peças, as peças daquela loja não vistas há mais de `STALE_PRODUCT_DAYS` dias viram
+`available=false` (continuam no banco). Se a loja voltar a mostrar a peça — numa sincronização ou
+numa busca sob demanda —, ela volta a disponível com os dados atualizados. Sincronização que
+falhou ou veio vazia não marca nada (uma loja fora do ar não derruba o catálogo). O provador
+consulta só peças disponíveis; com poucas, a busca sob demanda procura o termo na loja de novo.
+
+Ordem de preferência para novas fontes: **API oficial/autorizada → feed oficial → scraping permitido**
+(nunca substituir uma API funcional por scraping, nunca contornar bloqueio).
+
+Ligar/desligar uma loja: `Source.enabled` no banco (via `PATCH /api/v1/sources/:id`) ou, sem mexer
+no banco, `CRAWLER_DISABLED_SOURCES=amazon,ca` — a loja sai do registro de crawlers (sync manual
+responde `CRAWLER_NOT_AVAILABLE`) e o agendador não a agenda.
 
 ### Scraping responsável
 
@@ -308,6 +327,12 @@ e os produtos são persistidos conforme chegam (sem carregar o catálogo inteiro
 - **Categoria**: primeira palavra-chave do nome (o substantivo principal: "Blusa de Moletom" é
   blusa); fallback para o caminho de categoria da loja. Itens como perfume ou "body splash" não
   recebem categoria de vestuário.
+  Árvore (seed): **Roupas** (camisas, camisetas, blusas, vestidos, saias, calças, bermudas,
+  shorts, macacões, casacos e jaquetas, moletons, regatas, moda praia, moda íntima),
+  **Calçados** (tênis, sapatos, botas, sandálias, chinelos, sapatilhas, slides) e **Acessórios**
+  (bonés, chapéus, bolsas, mochilas, óculos, cintos, relógios, carteiras, joias, bijuterias).
+  Filtrar pela categoria pai inclui as filhas. Nova categoria = entrada no seed + palavra-chave
+  em `CATEGORY_KEYWORDS`.
 - **Preço**: aceita `139.9`, `"139,90"`, `"R$ 1.299,90"`; precisa ser > 0. `originalPrice` só é
   mantido se for maior que o preço.
 - **Disponibilidade**, URLs absolutas (`//img…` → `https://img…`), até 10 imagens sem duplicatas.
@@ -558,12 +583,10 @@ Nada em products/sources/worker precisa mudar.
 
 ## Roadmap
 
-- Crawl incremental da Renner (cursor no sitemap: hoje cada execução percorre o sitemap desde o
-  início até o limite).
-- Integração Amazon via fonte autorizada (`AmazonCatalogProvider`).
+- Integração Amazon pela Creators API (OAuth 2.0), quando as credenciais forem aprovadas.
+- Mercado Livre, se houver um endpoint oficial de busca com preço/link acessível a terceiros.
 - Processamento de imagens → object storage/CDN (`imageCachedUrl`, `imageProcessingStatus`).
 - `PriceHistory`, `ProductVariant` (tamanho/cor por SKU), `Brand`.
-- Aquisição sob demanda: busca sem resultado → enfileira `search` nas fontes → catálogo.
 - PostgreSQL Full Text Search (e Meilisearch se a escala justificar).
 - `SearchQuery` para analytics, embeddings/similaridade para recomendação.
 - Autenticação por API key quando a API for exposta fora da rede interna.

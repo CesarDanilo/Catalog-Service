@@ -153,6 +153,15 @@ export class ProductRepository {
     });
   }
 
+  /** Marca como indisponíveis as peças da fonte não vistas desde `seenBefore`. Devolve quantas. */
+  async markStaleUnavailable(sourceId: string, seenBefore: Date): Promise<number> {
+    const { count } = await this.prisma.product.updateMany({
+      where: { sourceId, available: true, lastScrapedAt: { lt: seenBefore } },
+      data: { available: false },
+    });
+    return count;
+  }
+
   private async replaceImages(
     tx: Prisma.TransactionClient,
     productId: string,

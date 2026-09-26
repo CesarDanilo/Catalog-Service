@@ -1,3 +1,4 @@
+import { env } from '../../config/env.js';
 import type { LockService } from '../../infrastructure/redis/lock.service.js';
 import { CrawlerError } from '../../shared/errors/app-error.js';
 import type { CategoryService } from '../categories/category.service.js';
@@ -23,6 +24,8 @@ export interface CrawlRunnerDeps {
   registry: CrawlerRegistry;
   locks: LockService;
   logger: RunnerLogger;
+  /** Dias sem ser vista pra peça virar indisponível (padrão: STALE_PRODUCT_DAYS). */
+  staleProductDays?: number;
 }
 
 /** Erro que não deve ser repetido pela fila (a execução falharia do mesmo jeito). */
@@ -34,6 +37,7 @@ export class NonRetryableCrawlError extends Error {
 }
 
 const LOCK_TTL_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const PROGRESS_EVERY = 25;
 
 /**
@@ -92,6 +96,22 @@ export class CrawlRunner {
       // Antes de marcar COMPLETED: quem espera o job (busca sob demanda) reconsulta logo em seguida.
       if (stats.productsCreated + stats.productsUpdated > 0)
         await this.deps.products.invalidateSearches();
+      // Só depois de uma sincronização completa que achou peças: se a loja/crawler quebrou, não
+      // derruba o catálogo inteiro pra "indisponível". Busca sob demanda cobre poucos termos, não conta.
+      if (params.mode !== 'search' && stats.productsFound > 0) {
+        const staleDays = this.deps.staleProductDays ?? env.STALE_PRODUCT_DAYS;
+        const seenBefore = new Date(startedAt - staleDays * DAY_MS);
+        const markedUnavailable = await this.deps.products.markStaleUnavailable(
+          source.id,
+          seenBefore,
+        );
+        if (markedUnavailable > 0) {
+          logger.info(
+            { ...log, markedUnavailable, staleDays },
+            'stale products marked unavailable',
+          );
+        }
+      }
       await crawlJobs.markCompleted(crawlJobId, stats);
       await sources.markSynced(source.id, new Date());
       logger.info({ ...log, ...stats, durationMs: Date.now() - startedAt }, 'crawl completed');

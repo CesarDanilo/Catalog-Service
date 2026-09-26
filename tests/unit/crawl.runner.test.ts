@@ -40,6 +40,7 @@ function setup(items: CrawlItem[] | (() => AsyncIterable<CrawlItem>), sourceOver
   const seen = new Set<string>();
   const products = {
     invalidateSearches: vi.fn(async () => {}),
+    markStaleUnavailable: vi.fn(async () => 0),
     saveScraped: vi.fn(
       async (_s: string, p: { externalId: string }, _categoryId: string | null) => {
         const created = !seen.has(p.externalId);
@@ -115,6 +116,44 @@ describe('CrawlRunner', () => {
     locks.acquire.mockResolvedValueOnce(null as never);
     await expect(runner.run('j1')).rejects.toThrow(/already running/);
     expect(crawlJobs.markRunning).not.toHaveBeenCalled();
+  });
+
+  it('sincronização completa com peças marca como indisponíveis as não vistas há N dias', async () => {
+    const { runner, products } = setup([{ ok: true, product: product('1') }]);
+    const before = Date.now();
+    await runner.run('j1');
+
+    expect(products.markStaleUnavailable).toHaveBeenCalledTimes(1);
+    const [sourceId, seenBefore] = products.markStaleUnavailable.mock.calls[0] as unknown as [
+      string,
+      Date,
+    ];
+    expect(sourceId).toBe('s1');
+    const threeDays = 3 * 24 * 60 * 60 * 1000;
+    expect(before - seenBefore.getTime()).toBeGreaterThanOrEqual(threeDays - 1_000);
+    expect(before - seenBefore.getTime()).toBeLessThanOrEqual(threeDays + 1_000);
+  });
+
+  it('não marca indisponíveis em busca sob demanda, sincronização vazia ou que falhou', async () => {
+    const search = setup([{ ok: true, product: product('1') }]);
+    search.crawlJobs.findById.mockResolvedValueOnce({
+      id: 'j1',
+      sourceId: 's1',
+      params: { mode: 'search', query: 'camisa' },
+    } as never);
+    await search.runner.run('j1');
+    expect(search.products.markStaleUnavailable).not.toHaveBeenCalled();
+
+    const empty = setup([]);
+    await empty.runner.run('j1');
+    expect(empty.products.markStaleUnavailable).not.toHaveBeenCalled();
+
+    const broken = setup(async function* () {
+      yield { ok: true, product: product('1') } as CrawlItem;
+      throw new Error('loja caiu');
+    });
+    await expect(broken.runner.run('j1')).rejects.toThrow('loja caiu');
+    expect(broken.products.markStaleUnavailable).not.toHaveBeenCalled();
   });
 
   it('trava por modo: sincronização e busca da mesma fonte usam travas diferentes', async () => {

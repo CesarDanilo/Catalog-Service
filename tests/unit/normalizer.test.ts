@@ -70,6 +70,26 @@ describe('normalizeCategory', () => {
     ['Body Splash Morango', null],
     ['Perfume La Vie Est Belle', null],
     ['Boneco Funko Pop', null],
+    ['Regata Masculina Dry Fit', 'regatas'],
+    ['Moletom Canguru Cinza', 'moletons'],
+    ['Blusa de Moletom', 'blusas'],
+    ['Tênis Adidas Courtblock Branco', 'tenis'],
+    ['Sapatênis Casual Couro', 'sapatos'],
+    ['Bota Coturno Cano Curto', 'botas'],
+    ['Sandália Rasteira Tiras', 'sandalias'],
+    ['Chinelo Havaianas Slim', 'chinelos'],
+    ['Sapatilha Bico Fino', 'sapatilhas'],
+    ['Slide Nike Victori', 'slides'],
+    ['Boné Aba Curva', 'bones'],
+    ['Chapéu Bucket Jeans', 'chapeus'],
+    ['Kit Bolsa Tiracolo Cinto Couro', 'bolsas'],
+    ['Mochila Escolar Preta', 'mochilas'],
+    ['Óculos de Sol Aviador', 'oculos'],
+    ['Cinto de Couro Fivela', 'cintos'],
+    ['Relógio Digital Esportivo', 'relogios'],
+    ['Carteira Masculina Couro', 'carteiras'],
+    ['Colar Dourado Corrente', 'bijuterias'],
+    ['Joia Anel Prata 925', 'joias'],
   ])('%s -> %s', (text, expected) => {
     expect(normalizeCategory(text)).toBe(expected);
   });
@@ -114,6 +134,21 @@ describe('normalizeProduct', () => {
       available: true,
     });
     expect(result.searchText).toBe('camisa masculina de linho preta basics preto masculino');
+  });
+
+  it('produto sem preço é recusado (não entra no catálogo)', () => {
+    expect(() => normalizeProduct({ ...base, price: 0 })).toThrow(ProductNormalizationError);
+    expect(() => normalizeProduct({ ...base, price: Number.NaN })).toThrow(
+      ProductNormalizationError,
+    );
+  });
+
+  it('produto sem imagem, sem categoria ou indisponível continua válido', () => {
+    const result = normalizeProduct({ ...base, name: 'Peça Especial', available: false });
+    expect(result.imageUrl).toBeNull();
+    expect(result.images).toEqual([]);
+    expect(result.categorySlug).toBeNull();
+    expect(result.available).toBe(false);
   });
 
   it('descarta originalPrice que não é maior que o preço', () => {

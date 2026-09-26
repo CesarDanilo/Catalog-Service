@@ -177,6 +177,53 @@ describe('GET /api/v1/products', () => {
     }
   });
 
+  it('markStaleUnavailable: só peças daquela loja não vistas desde a data viram indisponíveis', async () => {
+    const renner = await prisma.source.findUniqueOrThrow({ where: { slug: 'renner' } });
+    const ca = await prisma.source.findUniqueOrThrow({ where: { slug: 'ca' } });
+    const save = (sourceId: string, id: string, name: string) =>
+      container.services.products.saveScraped(
+        sourceId,
+        normalizeProduct(scraped(id, name, 99.9)),
+        null,
+        new Date(),
+      );
+    const [old, fresh, otherStore] = await Promise.all([
+      save(renner.id, 's1', 'Camisa Antiga Sumiu da Loja'),
+      save(renner.id, 's2', 'Camisa Vista Hoje'),
+      save(ca.id, 's3', 'Camisa Antiga Outra Loja'),
+    ]);
+    const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+    await prisma.product.updateMany({
+      where: { id: { in: [old.id, otherStore.id] } },
+      data: { lastScrapedAt: tenDaysAgo },
+    });
+    try {
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+      const marked = await container.services.products.markStaleUnavailable(
+        renner.id,
+        threeDaysAgo,
+      );
+      expect(marked).toBe(1);
+      const rows = await prisma.product.findMany({
+        where: { id: { in: [old.id, fresh.id, otherStore.id] } },
+        select: { id: true, available: true },
+      });
+      const available = Object.fromEntries(rows.map((r) => [r.id, r.available]));
+      expect(available[old.id]).toBe(false);
+      expect(available[fresh.id]).toBe(true);
+      expect(available[otherStore.id]).toBe(true);
+
+      // Voltou a aparecer na loja: a próxima sincronização a deixa disponível de novo.
+      await save(renner.id, 's1', 'Camisa Antiga Sumiu da Loja');
+      const back = await prisma.product.findUniqueOrThrow({ where: { id: old.id } });
+      expect(back.available).toBe(true);
+    } finally {
+      await prisma.product.deleteMany({
+        where: { id: { in: [old.id, fresh.id, otherStore.id] } },
+      });
+    }
+  });
+
   it('categoria pai inclui subcategorias', async () => {
     expect((await list('?category=roupas')).pagination.total).toBe(4);
     expect((await list('?category=inexistente')).pagination.total).toBe(0);

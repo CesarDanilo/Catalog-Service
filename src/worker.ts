@@ -54,8 +54,8 @@ async function main() {
   let scheduleTimer: NodeJS.Timeout | undefined;
   if (env.SCHEDULER_ENABLED) {
     const refresh = () =>
-      syncSchedules(queue, repositories.sources, logger).catch((error: unknown) =>
-        logger.error({ err: error }, 'failed to sync schedules'),
+      syncSchedules(queue, repositories.sources, logger, (slug) => registry.has(slug)).catch(
+        (error: unknown) => logger.error({ err: error }, 'failed to sync schedules'),
       );
     await refresh();
     // Reaplica periodicamente para refletir alterações feitas via PATCH /sources/:id.

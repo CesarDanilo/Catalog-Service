@@ -82,6 +82,17 @@ export class ProductService {
     await this.cache.set(cacheKeys.searchVersion(), Date.now(), SEARCH_VERSION_TTL_SECONDS);
   }
 
+  /**
+   * Peças que saíram da loja: não apareceram nas sincronizações desde `seenBefore` → indisponíveis
+   * (continuam no banco; voltam a disponíveis sozinhas se a loja as mostrar de novo). Descarta as
+   * buscas cacheadas quando algo muda.
+   */
+  async markStaleUnavailable(sourceId: string, seenBefore: Date): Promise<number> {
+    const count = await this.repository.markStaleUnavailable(sourceId, seenBefore);
+    if (count > 0) await this.invalidateSearches();
+    return count;
+  }
+
   private async resolveFilters(query: ListProductsQuery): Promise<ProductFilters> {
     const filters: ProductFilters = {
       terms: query.q ? toSearchTerms(query.q) : [],

@@ -74,4 +74,48 @@ describe('HttpClient', () => {
     const fetchFn = (async () => new Response('<html>')) as unknown as typeof fetch;
     await expect(client(fetchFn).getJson('https://x.test')).rejects.toThrow(/Invalid JSON/);
   });
+
+  it('timeout: request pendurado é abortado e vira erro (sem ficar preso)', async () => {
+    const fetchFn = ((_url: string, init: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+      })) as unknown as typeof fetch;
+    const slow = new HttpClient({
+      userAgent: 'test',
+      timeoutMs: 50,
+      maxRetries: 1,
+      minDelayMs: 0,
+      fetchFn,
+    });
+    const started = Date.now();
+    await expect(slow.getText('https://x.test')).rejects.toBeInstanceOf(CrawlerError);
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
+  it('404 não é repetido e não é retentável', async () => {
+    let calls = 0;
+    const fetchFn = (async () => {
+      calls++;
+      return new Response('nope', { status: 404 });
+    }) as unknown as typeof fetch;
+    const error = await client(fetchFn)
+      .getText('https://x.test')
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(CrawlerError);
+    expect((error as CrawlerError).retryable).toBe(false);
+    expect(calls).toBe(1);
+  });
+
+  it.each([429, 500])(
+    '%s é transitório: repete (respeitando Retry-After) e recupera',
+    async (status) => {
+      let calls = 0;
+      const fetchFn = (async () =>
+        ++calls < 2
+          ? new Response('x', { status, headers: { 'retry-after': '0' } })
+          : new Response('ok')) as unknown as typeof fetch;
+      await expect(client(fetchFn).getText('https://x.test')).resolves.toBe('ok');
+      expect(calls).toBe(2);
+    },
+  );
 });
