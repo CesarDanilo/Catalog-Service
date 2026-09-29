@@ -4,6 +4,7 @@ Serviço de catálogo de produtos de moda para o **provador virtual**. Mantém u
 (PostgreSQL), alimentado de forma assíncrona por crawlers de lojas, e o expõe por uma API REST
 com cache (Redis). O provador consulta apenas esta API — não conhece scrapers, filas ou HTML.
 
+- [Resumo](#resumo)
 - [Visão geral](#visão-geral)
 - [Arquitetura](#arquitetura)
 - [Stack](#stack)
@@ -25,6 +26,88 @@ com cache (Redis). O provador consulta apenas esta API — não conhece scrapers
 - [Adicionando uma nova loja](#adicionando-uma-nova-loja)
 - [Troubleshooting](#troubleshooting)
 - [Roadmap](#roadmap)
+
+---
+
+## Resumo
+
+> O essencial em uma página. Os detalhes estão nas seções abaixo.
+
+**O que é:** o "Google Shopping próprio" do provador. Junta num banco só (PostgreSQL) os produtos
+de várias lojas de moda, padronizados (nome, preço, cor, gênero, tamanho, categoria, fotos,
+disponibilidade), e entrega por uma API REST interna. O backend do provador consulta **só esta
+API** — é gratuita por chamada, ao contrário do Google Shopping pago (SerpApi).
+
+### Lojas
+
+| Loja                                                  | Como os produtos são obtidos                                            | Status                            |
+| ----------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------- |
+| **C&A, Hering, Reserva, Malwee, Aramis, Mash, Lupo**  | Busca pública JSON da plataforma **VTEX** (a mesma que o site usa)      | ✅ Ativas — 1 a 3 s por busca     |
+| **Renner**                                            | Página de busca da loja aberta no Chromium (Playwright)                 | ✅ Ativa — 3 a 5 s por busca      |
+| Google Shopping                                       | SerpApi (`GOOGLE_SHOPPING_FETCHER=serpapi`) — busca ao vivo, sem gravar | ⏸️ Desligado (sem chave com cota) |
+| Amazon, Mercado Livre                                 | Precisam de API oficial                                                 | ⏸️ Não implementado               |
+| Riachuelo, Centauro, Marisa, Netshoes, Youcom, Colcci | Bloqueiam acesso automatizado — **nunca contornamos**                   | ⛔ Fora                           |
+
+Loja VTEX nova = uma linha em `src/modules/crawlers/vtex/vtex.stores.ts` + a fonte no seed.
+Levantamento de 22 lojas (robots.txt, VTEX, sitemap) em [Fontes do catálogo](#fontes-do-catálogo-catalog-sources--verificadas-em-2026-09-25).
+
+### Como funciona
+
+```text
+Backend do provador ── GET /api/v1/products/search (1 consulta por loja, em paralelo) ──► Catalog API ──► PostgreSQL
+        │                                                                                     (cache Redis)
+        └─ catálogo com pouco pro termo? POST /api/v1/sources/:id/sync {mode:"search"} ──► fila BullMQ ──► Worker ──► lojas
+           espera os jobs (até 8 s), consulta de novo                                         grava/atualiza as peças
+```
+
+1. **Sincronização automática** — a cada 6 h o worker percorre cada loja por termos/categorias.
+2. **Busca sob demanda** — termo que o catálogo ainda não tem: o backend pede às 8 lojas, espera
+   a 1ª terminar com peças + até 2,5 s pelas outras, e consulta de novo. Termo repetido: ~0,1 s.
+3. **Normalização determinística** (sem IA): gênero (infantil no nome/categoria vence), cor,
+   categoria, tamanhos, preço. Peça que some da loja vira `available=false`.
+
+**Prioridade no backend:** catálogo próprio (disponíveis, sem infantil, lojas intercaladas,
+relevância por similaridade) → busca sob demanda nas lojas → busca mais ampla → Google Shopping
+pago só pra completar.
+
+### Endpoints principais (`/api/v1`)
+
+| Método | Rota                                     | Pra quê                                                 |
+| ------ | ---------------------------------------- | ------------------------------------------------------- |
+| GET    | `/products/search?q=&gender=&source=...` | Busca no catálogo (o que o backend usa)                 |
+| GET    | `/products/:id`                          | Detalhe com todas as imagens                            |
+| GET    | `/sources`                               | Lojas e se estão ativas                                 |
+| POST   | `/sources/:id/sync`                      | Pede busca (`mode:"search"`) ou sincronização (`crawl`) |
+| GET    | `/crawl-jobs/:id`                        | Andamento de um pedido                                  |
+| GET    | `/providers/:source/search?q=`           | Busca ao vivo sem gravar (ex.: `google-shopping`)       |
+
+Swagger em `/docs`.
+
+### Rodar local
+
+```bash
+docker compose up -d --build          # Postgres, Redis, API (3333, com migrations + seed) e worker
+curl localhost:3333/health
+npm test                               # 313 testes (unitários + integração); nenhum acessa a internet
+```
+
+Backend local: `CATALOG_SERVICE_URL=http://host.docker.internal:3333`.
+
+### Deploy (EC2) — o que não pode faltar
+
+- `docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build` (roda
+  migrations + seed: cadastra as lojas novas sem mexer nas existentes).
+- **`RATE_LIMIT_ALLOWLIST=<IP privado do backend>`** — uma busca nova do backend faz ~90–130
+  chamadas; sem isso o limite por IP (300/min) bloqueia o backend com 429.
+- **`CRAWLER_CONCURRENCY=5`** — cada busca sob demanda vira 8 jobs (1 por loja).
+- `GOOGLE_SHOPPING_FETCHER=disabled` até existir chave da SerpApi com cota.
+
+### Números medidos (2026-09-29)
+
+- Teste real, "camiseta" nas 6 lojas VTEX novas: 119 peças, 0 falhas; preço, foto, tamanho e
+  categoria em 100%.
+- Pelo backend: termo novo 2,5–8 s; termo já no catálogo ~0,1 s.
+- Google Shopping por navegador: CAPTCHA já na 1ª busca → só SerpApi em produção.
 
 ---
 
@@ -61,7 +144,7 @@ BullMQ (fila "crawler", no Redis)           │
 Crawler Worker ── CrawlRunner ── Normalizer ┘
    │
    ▼
-CrawlerRegistry → RennerCrawler | CACrawler | AmazonCrawler | ...
+CrawlerRegistry → RennerCrawler | VtexCrawler (C&A, Hering, Reserva...) | GoogleShopping | ...
    │
    ▼
 Lojas (HTTP + Cheerio; Playwright só quando o conteúdo depende de JS)
@@ -99,6 +182,7 @@ src/
 │   ├── sources/            # lojas + sync
 │   ├── crawl-jobs/         # histórico/status dos crawls + port CrawlQueue
 │   ├── health/             # /health, /health/database, /health/redis
+│   ├── live-search/        # GET /providers/:source/search — busca ao vivo em qualquer provider
 │   └── crawlers/
 │       ├── crawler.interface.ts   # contrato Crawler
 │       ├── crawler.types.ts       # ScrapedProduct, CrawlItem, CrawlOptions
@@ -108,8 +192,10 @@ src/
 │       ├── normalizer/            # regras determinísticas (gênero, cor, categoria, preço...)
 │       ├── shared/                # HttpClient responsável, BrowserPool (Playwright), sitemap
 │       ├── renner/                # renner.crawler / renner.parser / renner.mapper
-│       ├── ca/                    # ca.crawler / ca.parser / ca.mapper
-│       └── amazon/                # adapter preparado para fonte autorizada
+│       ├── vtex/                  # lojas VTEX: vtex.crawler / parser / mapper + vtex.stores (lista de lojas)
+│       ├── ca/                    # C&A = configuração do VtexCrawler
+│       ├── amazon/                # adapter preparado para fonte autorizada
+│       └── google-shopping/       # busca ao vivo: fetcher (SerpApi|browser) → parser → mapper
 ├── infrastructure/
 │   ├── database/prisma.ts
 │   ├── redis/              # conexão, CacheService, LockService
@@ -119,6 +205,8 @@ src/
 prisma/                     # schema, migrations, seed
 tests/                      # unit/, integration/, fixtures/ (HTML/JSON reais), helpers/
 scripts/manual-crawl.ts     # teste manual de crawler contra a loja real
+scripts/google-shopping-live.ts  # teste REAL opcional do Google Shopping (npm run test:google-shopping)
+docs/google-shopping.md     # documentação do provider Google Shopping
 ```
 
 ## Requisitos
@@ -167,6 +255,7 @@ Variáveis do ambiente têm precedência sobre o arquivo `.env`.
 | `DATABASE_URL`                         | —                             | Conexão PostgreSQL                                                 |
 | `REDIS_URL`                            | —                             | Conexão Redis                                                      |
 | `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW` | `100` / `1 minute`            | Rate limit por IP                                                  |
+| `RATE_LIMIT_ALLOWLIST`                 | (vazio)                       | IPs/redes fora do limite (ex.: o backend); vale o IP da conexão    |
 | `CACHE_TTL`                            | `300`                         | TTL do cache de busca (s)                                          |
 | `CACHE_PRODUCT_TTL`                    | `600`                         | TTL do cache de produto/categorias (s)                             |
 | `CRAWLER_TIMEOUT`                      | `30000`                       | Timeout por requisição do crawler (ms)                             |
@@ -177,6 +266,7 @@ Variáveis do ambiente têm precedência sobre o arquivo `.env`.
 | `SCHEDULER_ENABLED`                    | `false`                       | Liga o agendamento periódico no worker                             |
 | `CRAWLER_DISABLED_SOURCES`             | (vazio)                       | Lojas desligadas sem mexer no banco (slugs por vírgula)            |
 | `STALE_PRODUCT_DAYS`                   | `3`                           | Dias sem ser vista numa sincronização pra peça virar indisponível  |
+| `GOOGLE_SHOPPING_*`                    | `FETCHER=disabled`            | Busca ao vivo no Google Shopping — ver `docs/google-shopping.md`   |
 
 Nunca versione `.env`, credenciais, tokens, cookies ou chaves de API (o `.gitignore` já exclui `.env`).
 
@@ -279,14 +369,17 @@ e os produtos são persistidos conforme chegam (sem carregar o catálogo inteiro
 
 ### Fontes do catálogo (Catalog Sources) — verificadas em 2026-09-25
 
-| Fonte                 | Tipo                                         | Status                                    | Como funciona / motivo                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| --------------------- | -------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **C&A** (`ca`)        | Endpoint público da própria loja (VTEX JSON) | ✅ Ativa                                  | Não há API oficial de parceiros; usa o catálogo público VTEX da loja: `/api/catalog_system/pub/products/search/{termo ou categoria}?_from=&_to=` (parâmetros bloqueados no robots.txt não são usados). `crawl()` percorre `Source.config.categories` (subcategorias de roupas, 250 peças cada).                                                                                                                                                                                                                                                                                         |
-| **Renner** (`renner`) | Scraper (Playwright)                         | ✅ Ativa                                  | Não há API oficial. `search()` abre a página de busca `/b?Ntt=` (permitida no robots.txt) e lê a resposta de busca que **a própria página** recebe do provedor de busca da loja — peças completas (gênero, cor, categoria, preço, fotos, estoque). Esse provedor proíbe robôs no robots.txt dele, então **nunca é chamado direto**: é o mesmo tráfego de uma visita comum. `crawl()` com `Source.config.searchTerms` sincroniza por termos (`&pagina=N`, 1s entre páginas); sem termos, cai no sitemap. Sem a resposta de busca, cai no método antigo (links + página de cada produto). |
-| **Amazon** (`amazon`) | API oficial                                  | ⏸️ Aguardando aprovação de credenciais    | A Product Advertising API 5.0 foi **descontinuada em 30/04/2026 e desligada em 15/05/2026**; a substituta é a **Creators API** (OAuth 2.0). Nada implementado contra ela ainda — fica pra quando as credenciais forem aprovadas, testando contra a API real. Scraping da Amazon não é feito (termos de uso). Fonte **desabilitada** no seed; `AmazonCrawler` falha com erro claro e sem retry.                                                                                                                                                                                          |
-| **Mercado Livre**     | API oficial                                  | ⏸️ Pendente — não implementado            | A busca de anúncios por palavra-chave (`/sites/MLB/search`) responde **403 pra aplicativos de terceiros desde o início de 2026**, mesmo com token válido, sem substituto oficial. O que continua documentado (`/products/search`) é uma ferramenta de catálogo pra vendedores publicarem (nome, marca, atributos) e **não traz preço nem link de anúncio**. Validar ao vivo exige um app do Mercado Livre (OAuth).                                                                                                                                                                      |
-| **Riachuelo**         | —                                            | ⛔ Bloqueada pela loja — não implementado | O site responde **Access Denied (Akamai)** a acesso automatizado, até no `robots.txt`, de IP residencial e da AWS. Não contornamos bloqueios; sem ver a estrutura real, não há seletores a implementar.                                                                                                                                                                                                                                                                                                                                                                                 |
-| **Centauro**          | —                                            | ⛔ Bloqueada pela loja — não implementado | Mesmo caso da Riachuelo: **Access Denied (Akamai)** até no `robots.txt`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Fonte                                                                                                     | Tipo                                         | Status                                    | Como funciona / motivo                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **C&A** (`ca`)                                                                                            | Endpoint público da própria loja (VTEX JSON) | ✅ Ativa                                  | Não há API oficial de parceiros; usa o catálogo público VTEX da loja: `/api/catalog_system/pub/products/search/{termo ou categoria}?_from=&_to=` (parâmetros bloqueados no robots.txt não são usados). `crawl()` percorre `Source.config.categories` (subcategorias de roupas, 250 peças cada).                                                                                                                                                                                                                                                                                         |
+| **Hering, Reserva, Malwee, Aramis, Mash, Lupo** (`hering`, `reserva`, `malwee`, `aramis`, `mash`, `lupo`) | Endpoint público da própria loja (VTEX JSON) | ✅ Ativas (2026-09-29)                    | Mesmo catálogo público VTEX da C&A (`VtexCrawler`); cada loja é uma entrada em `vtex/vtex.stores.ts`. `/api/` liberado no robots.txt de todas; termo vai no caminho (a Reserva bloqueia `ft=`/`fq=`). Sem `config`, `crawl()` percorre termos padrão (camiseta, calça, vestido...). Especificações lidas sem diferenciar caixa/acento (`Cor`/`COR`, `Gênero`/`GÊNERO`/`gender`). Aramis sem gênero no produto → `masculino` (loja masculina); Mash quase nunca informa gênero.                                                                                                          |
+| **Renner** (`renner`)                                                                                     | Scraper (Playwright)                         | ✅ Ativa                                  | Não há API oficial. `search()` abre a página de busca `/b?Ntt=` (permitida no robots.txt) e lê a resposta de busca que **a própria página** recebe do provedor de busca da loja — peças completas (gênero, cor, categoria, preço, fotos, estoque). Esse provedor proíbe robôs no robots.txt dele, então **nunca é chamado direto**: é o mesmo tráfego de uma visita comum. `crawl()` com `Source.config.searchTerms` sincroniza por termos (`&pagina=N`, 1s entre páginas); sem termos, cai no sitemap. Sem a resposta de busca, cai no método antigo (links + página de cada produto). |
+| **Amazon** (`amazon`)                                                                                     | API oficial                                  | ⏸️ Aguardando aprovação de credenciais    | A Product Advertising API 5.0 foi **descontinuada em 30/04/2026 e desligada em 15/05/2026**; a substituta é a **Creators API** (OAuth 2.0). Nada implementado contra ela ainda — fica pra quando as credenciais forem aprovadas, testando contra a API real. Scraping da Amazon não é feito (termos de uso). Fonte **desabilitada** no seed; `AmazonCrawler` falha com erro claro e sem retry.                                                                                                                                                                                          |
+| **Mercado Livre**                                                                                         | API oficial                                  | ⏸️ Pendente — não implementado            | A busca de anúncios por palavra-chave (`/sites/MLB/search`) responde **403 pra aplicativos de terceiros desde o início de 2026**, mesmo com token válido, sem substituto oficial. O que continua documentado (`/products/search`) é uma ferramenta de catálogo pra vendedores publicarem (nome, marca, atributos) e **não traz preço nem link de anúncio**. Validar ao vivo exige um app do Mercado Livre (OAuth).                                                                                                                                                                      |
+| Farm, Animale, Lojas Torra                                                                                | VTEX                                         | ⏸️ Não implementado                       | robots.txt proíbe `/api/`; dá pra usar sitemap + JSON-LD das páginas de produto (mais lento).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Marisa, Netshoes, Youcom, Colcci                                                                          | —                                            | ⛔ Bloqueadas pela loja                   | 403 / anti-bot até no robots.txt (2026-09-29).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Riachuelo**                                                                                             | —                                            | ⛔ Bloqueada pela loja — não implementado | O site responde **Access Denied (Akamai)** a acesso automatizado, até no `robots.txt`, de IP residencial e da AWS. Não contornamos bloqueios; sem ver a estrutura real, não há seletores a implementar.                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Centauro**                                                                                              | —                                            | ⛔ Bloqueada pela loja — não implementado | Mesmo caso da Riachuelo: **Access Denied (Akamai)** até no `robots.txt`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 **Peças que saíram da loja:** depois de cada sincronização completa (`crawl`) que terminou bem e
 achou peças, as peças daquela loja não vistas há mais de `STALE_PRODUCT_DAYS` dias viram
@@ -376,6 +469,7 @@ Todas as rotas de negócio usam o prefixo **`/api/v1`**. Formato de resposta:
 | POST   | `/api/v1/sources/:id/sync`                     | Enfileira crawl → `202` com o `CrawlJob`                                     |
 | GET    | `/api/v1/sources/:id/jobs`                     | Histórico de crawls (paginado)                                               |
 | GET    | `/api/v1/crawl-jobs/:id`                       | Status e métricas de um crawl                                                |
+| GET    | `/api/v1/providers/:source/search?q=`          | Busca ao vivo num provider externo, sem persistir (ex.: `google-shopping`)   |
 
 **Filtros de produtos**: `q`, `category` (slug, inclui subcategorias), `gender`, `brand`,
 `color`, `source` (slug), `minPrice`, `maxPrice`, `available`, `sort`
@@ -461,6 +555,17 @@ GET /api/v1/products/search?q=camisa%20preta&gender=masculino&pageSize=20
 }
 ```
 
+Como o backend do provador usa (`backend-clothing-3d`, `company-catalog.provider.ts` e
+`company-catalog.acquisition.ts`):
+
+- uma consulta por loja ativa, em paralelo, com `available=true` e `excludeGender=infantil`;
+  resultados intercalados entre lojas;
+- com poucas peças, pede o termo às lojas (`POST /sources/:id/sync`, `mode: "search"`), acompanha
+  os jobs em `GET /crawl-jobs/:id` e consulta de novo (espera até 8 s; depois da 1ª loja com
+  peças, até 2,5 s pelas outras). O mesmo termo só é pedido de novo depois de 6 h;
+- esse fluxo faz ~90–130 chamadas numa busca nova: o IP do backend precisa estar em
+  `RATE_LIMIT_ALLOWLIST`.
+
 Para favoritos/looks, guarde o `id` do produto e use `GET /api/v1/products/{id}` (inclui todas as
 imagens). O provador não precisa saber como o produto foi coletado, qual crawler foi usado,
 como o HTML foi processado, nem como Redis/BullMQ funcionam. Configure `CORS_ORIGIN` com a
@@ -482,6 +587,10 @@ npm run test:watch
   delay), CacheService, CrawlerRegistry, ProductService, CrawlRunner.
 - **Integração** (Postgres + Redis reais): API de produtos/busca/categorias, API de fontes/sync,
   health/Swagger, fluxo de crawl com idempotência e concorrência, fila BullMQ + worker real.
+- **Google Shopping**: parser com fixtures (`tests/fixtures/google-shopping/`), endpoint de ponta
+  a ponta com o scraper falso e teste de carga local (10/50/100 requisições) — nenhum acessa o
+  Google. O teste real é separado e opcional: `npm run test:google-shopping` (ver
+  `docs/google-shopping.md`).
 - Os testes usam o banco **`catalog_test`** (criado pelo `docker/postgres/init`) e o Redis db `1`;
   o helper se recusa a limpar um banco cujo nome não contenha `test`. Nenhum teste automatizado
   acessa a internet.
@@ -514,6 +623,8 @@ Checklist:
 - Health checks: `/health` (liveness), `/health/database` e `/health/redis` (readiness).
 - Logs em JSON (Pino) com `x-request-id`; headers `authorization`, `cookie` e `x-api-key` são
   redigidos. Em produção stack traces não são expostos.
+- `RATE_LIMIT_ALLOWLIST` com o IP privado do backend (senão ele recebe 429 nas buscas novas) e
+  `CRAWLER_CONCURRENCY=5` (uma busca sob demanda = 1 job por loja).
 - Segurança já ativa: Helmet, CORS, rate limit (compartilhado via Redis), limite de payload,
   timeout de requisição, validação Zod em toda entrada.
 - Autenticação: a API foi pensada para uso interno. Para expor publicamente, adicione um hook
@@ -531,7 +642,7 @@ Use `docker-compose.prod.yml` (não o `docker-compose.yml`, que é de desenvolvi
 - migrations + seed rodam uma vez no serviço `migrate` antes de API/worker subirem.
 
 ```bash
-cp .env.production.example .env.production     # preencher CATALOG_DB_PASSWORD e CATALOG_API_BIND
+cp .env.production.example .env.production     # preencher CATALOG_DB_PASSWORD, CATALOG_API_BIND e RATE_LIMIT_ALLOWLIST
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 docker compose -f docker-compose.prod.yml --env-file .env.production ps
 ```
@@ -565,24 +676,34 @@ Exemplo: `src/modules/crawlers/nova-loja/`.
 
 Nada em products/sources/worker precisa mudar.
 
+**Busca ao vivo (opcional)**: se a fonte também souber buscar na hora, sem persistir, implemente
+`liveSearch()` no crawler — ela aparece sozinha em `GET /api/v1/providers/nova-loja/search`
+(cache, paginação, validação e erros vêm do módulo `live-search`). Modelo: `google-shopping/`.
+
 ## Troubleshooting
 
-| Sintoma                                         | Causa / solução                                                                                                       |
-| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `Invalid environment variables` ao iniciar      | Falta `.env` ou variável inválida: `cp .env.example .env`                                                             |
-| `Can't reach database server at localhost:5433` | `docker compose up -d postgres` e aguarde ficar healthy                                                               |
-| `port is already allocated` (5432/6379/3333)    | Outro serviço usa a porta; ajuste o mapeamento em `docker-compose.yml` e as URLs no `.env`                            |
-| Testes: `Could not migrate the test database`   | Postgres parado ou volume antigo sem `catalog_test`: `docker compose exec postgres createdb -U postgres catalog_test` |
-| `/health/redis` 503                             | Redis parado ou `REDIS_URL` errada                                                                                    |
-| Sync fica `PENDING`                             | Worker não está rodando (`npm run worker` / `docker compose logs -f worker`)                                          |
-| `409 CRAWL_ALREADY_RUNNING`                     | Já existe crawl ativo para a fonte. Jobs sem progresso por 30 min são considerados abandonados                        |
-| Job `FAILED` com `Access denied (403)`          | A loja bloqueou o acesso. Não contornamos; reduza a frequência ou use uma fonte autorizada                            |
-| Job `COMPLETED` com `productsFound = 0`         | Estrutura da loja pode ter mudado; compare com os fixtures e ajuste o parser                                          |
-| `Playwright browser unavailable`                | `npx playwright install chromium` (já incluído na imagem Docker)                                                      |
-| Busca não reflete produto recém-atualizado      | Cache de busca expira em `CACHE_TTL` (5 min); o detalhe é invalidado na hora                                          |
+| Sintoma                                                                   | Causa / solução                                                                                                                  |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `Invalid environment variables` ao iniciar                                | Falta `.env` ou variável inválida: `cp .env.example .env`                                                                        |
+| `Can't reach database server at localhost:5433`                           | `docker compose up -d postgres` e aguarde ficar healthy                                                                          |
+| `port is already allocated` (5432/6379/3333)                              | Outro serviço usa a porta; ajuste o mapeamento em `docker-compose.yml` e as URLs no `.env`                                       |
+| Testes: `Could not migrate the test database`                             | Postgres parado ou volume antigo sem `catalog_test`: `docker compose exec postgres createdb -U postgres catalog_test`            |
+| `/health/redis` 503                                                       | Redis parado ou `REDIS_URL` errada                                                                                               |
+| Sync fica `PENDING`                                                       | Worker não está rodando (`npm run worker` / `docker compose logs -f worker`)                                                     |
+| `409 CRAWL_ALREADY_RUNNING`                                               | Já existe crawl ativo para a fonte. Jobs sem progresso por 30 min são considerados abandonados                                   |
+| Job `FAILED` com `Access denied (403)`                                    | A loja bloqueou o acesso. Não contornamos; reduza a frequência ou use uma fonte autorizada                                       |
+| Job `COMPLETED` com `productsFound = 0`                                   | Estrutura da loja pode ter mudado; compare com os fixtures e ajuste o parser                                                     |
+| `Playwright browser unavailable`                                          | `npx playwright install chromium` (já incluído na imagem Docker)                                                                 |
+| Backend recebe `429` do catálogo                                          | IP do backend fora de `RATE_LIMIT_ALLOWLIST` (vale o IP da conexão; em dev o padrão é `172.16.0.0/12`)                           |
+| Busca sob demanda lenta / jobs na fila                                    | `CRAWLER_CONCURRENCY` baixo (seu `.env` sobrescreve o padrão 5 do compose) ou disco lento (veja o checkpoint no log do Postgres) |
+| Containers `api`/`worker` em loop: `prisma/schema.prisma: file not found` | Criados a partir de outra pasta: `docker compose up -d --build` nesta pasta recria com os caminhos certos                        |
+| Busca não reflete produto recém-atualizado                                | Cache de busca expira em `CACHE_TTL` (5 min); o detalhe é invalidado na hora                                                     |
 
 ## Roadmap
 
+- Mais lojas: Farm, Animale, Lojas Torra, Pernambucanas e OQVestir via sitemap + JSON-LD
+  (robots.txt proíbe `/api/`); Insider via `/products.json` (Shopify).
+- Backend: acompanhar os jobs da busca sob demanda com menos chamadas (hoje ~1 a cada 0,5 s por loja).
 - Integração Amazon pela Creators API (OAuth 2.0), quando as credenciais forem aprovadas.
 - Mercado Livre, se houver um endpoint oficial de busca com preço/link acessível a terceiros.
 - Processamento de imagens → object storage/CDN (`imageCachedUrl`, `imageProcessingStatus`).
