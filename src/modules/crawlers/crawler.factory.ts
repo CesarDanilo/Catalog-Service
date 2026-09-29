@@ -1,6 +1,5 @@
 import { disabledSources, env } from '../../config/env.js';
 import { AmazonCrawler } from './amazon/amazon.crawler.js';
-import { CACrawler } from './ca/ca.crawler.js';
 import type { Crawler } from './crawler.interface.js';
 import { CrawlerRegistry } from './crawler.registry.js';
 import {
@@ -9,6 +8,8 @@ import {
 } from './google-shopping/index.js';
 import { RennerCrawler } from './renner/renner.crawler.js';
 import type { CrawlerContext } from './shared/crawler-context.js';
+import { VtexCrawler } from './vtex/vtex.crawler.js';
+import { VTEX_STORES } from './vtex/vtex.stores.js';
 
 /**
  * Único ponto que conhece todas as lojas. Para adicionar uma loja, registre-a aqui.
@@ -25,7 +26,8 @@ export function createCrawlerRegistry(
       userAgent: context.userAgent,
       timeoutMs: context.timeoutMs,
     }),
-    new CACrawler(context.createHttpClient()),
+    // Cada loja VTEX com o próprio HttpClient: o intervalo mínimo entre requisições é por loja.
+    ...VTEX_STORES.map((store) => new VtexCrawler(context.createHttpClient(), store)),
     new AmazonCrawler(),
     createGoogleShoppingProvider({
       config: googleShoppingConfigFromEnv(env),

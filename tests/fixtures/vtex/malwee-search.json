@@ -1,0 +1,222 @@
+[
+ {
+  "productId": "66814",
+  "productName": "Camiseta Pima Feminina",
+  "brand": "Basico.com",
+  "categories": [
+   "/Feminino/Blusas e Camisetas/Camisetas/",
+   "/Feminino/Blusas e Camisetas/",
+   "/Feminino/"
+  ],
+  "link": "https://www.malwee.com.br/camiseta-pima-feminina-100009499301409/p",
+  "Gênero": [
+   "Feminino"
+  ],
+  "Faixa Etária": [
+   "Adulto"
+  ],
+  "description": "<p>Confeccionada com o legítimo algodão Pima peruano, considerado o melhor do mundo por suas fibras finas e alongadas, o",
+  "items": [
+   {
+    "itemId": "390473",
+    "name": "Bege - XGG",
+    "Tamanho": [
+     "XGG"
+    ],
+    "CORES": [
+     "Bege"
+    ],
+    "COR": [
+     "Bege"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://malwee.vteximg.com.br/arquivos/ids/1321743/1000094993_01409_1.jpg?v=639192887863570000"
+     },
+     {
+      "imageUrl": "https://malwee.vteximg.com.br/arquivos/ids/1323849/1000094993_01409_2.jpg?v=639220487396800000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 199,
+       "ListPrice": 199,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "390474",
+    "name": "Bege - PP",
+    "Tamanho": [
+     "PP"
+    ],
+    "CORES": [
+     "Bege"
+    ],
+    "COR": [
+     "Bege"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://malwee.vteximg.com.br/arquivos/ids/1321742/1000094993_01409_1.jpg?v=639192887861700000"
+     },
+     {
+      "imageUrl": "https://malwee.vteximg.com.br/arquivos/ids/1323848/1000094993_01409_2.jpg?v=639220487397130000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 199,
+       "ListPrice": 199,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "390475",
+    "name": "Bege - P",
+    "Tamanho": [
+     "P"
+    ],
+    "CORES": [
+     "Bege"
+    ],
+    "COR": [
+     "Bege"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://malwee.vteximg.com.br/arquivos/ids/1321741/1000094993_01409_1.jpg?v=639192887859230000"
+     },
+     {
+      "imageUrl": "https://malwee.vteximg.com.br/arquivos/ids/1323847/1000094993_01409_2.jpg?v=639220487397270000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 199,
+       "ListPrice": 199,
+       "IsAvailable": true
+      }
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "productId": "66840",
+  "productName": "Camiseta Pima Masculina",
+  "brand": "Basico.com",
+  "categories": [
+   "/Masculino/Camisetas/Camisetas Manga Curta/",
+   "/Masculino/Camisetas/",
+   "/Masculino/"
+  ],
+  "link": "https://www.malwee.com.br/camiseta-pima-masculina-100009493402091/p",
+  "Gênero": [
+   "Masculino"
+  ],
+  "Faixa Etária": [
+   "Adulto"
+  ],
+  "description": "<p>Confeccionada com o legítimo algodão Pima peruano, considerado o melhor do mundo por suas fibras finas e alongadas, o",
+  "items": [
+   {
+    "itemId": "390626",
+    "name": "Vermelho - XGG",
+    "Tamanho": [
+     "XGG"
+    ],
+    "CORES": [
+     "Vermelho"
+    ],
+    "COR": [
+     "Vermelho"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://malwee.vteximg.com.br/arquivos/ids/1320489/1000094934_02091_01.jpg?v=639192882859630000"
+     },
+     {
+      "imageUrl": "https://malwee.vteximg.com.br/arquivos/ids/1322589/1000094934_02091_02.jpg?v=639220475213470000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 199,
+       "ListPrice": 199,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "390627",
+    "name": "Vermelho - PP",
+    "Tamanho": [
+     "PP"
+    ],
+    "CORES": [
+     "Vermelho"
+    ],
+    "COR": [
+     "Vermelho"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://malwee.vteximg.com.br/arquivos/ids/1320488/1000094934_02091_01.jpg?v=639192882856700000"
+     },
+     {
+      "imageUrl": "https://malwee.vteximg.com.br/arquivos/ids/1322588/1000094934_02091_02.jpg?v=639220475213800000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 199,
+       "ListPrice": 199,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "390628",
+    "name": "Vermelho - P",
+    "Tamanho": [
+     "P"
+    ],
+    "CORES": [
+     "Vermelho"
+    ],
+    "COR": [
+     "Vermelho"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://malwee.vteximg.com.br/arquivos/ids/1320487/1000094934_02091_01.jpg?v=639192882854400000"
+     },
+     {
+      "imageUrl": "https://malwee.vteximg.com.br/arquivos/ids/1322587/1000094934_02091_02.jpg?v=639220475214100000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 199,
+       "ListPrice": 199,
+       "IsAvailable": true
+      }
+     }
+    ]
+   }
+  ]
+ }
+]

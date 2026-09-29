@@ -1,0 +1,196 @@
+[
+ {
+  "productId": "2146189006",
+  "productName": "Camiseta Básica de Microfibra Preto",
+  "brand": "Mash",
+  "categories": [
+   "/Fitness/Camisetas/",
+   "/Fitness/"
+  ],
+  "link": "https://www.mash.com.br/camiseta-basica-de-microfibra-preto-68301pt00/p",
+  "Idade": [
+   "Adulto"
+  ],
+  "description": "- Camiseta Básica de Microfibra.",
+  "items": [
+   {
+    "itemId": "2147406926",
+    "name": "Camiseta Básica de Microfibra Preto G",
+    "Tamanho": [
+     "G"
+    ],
+    "Cor": [
+     "PRETO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://mash.vteximg.com.br/arquivos/ids/426981/683.01PT00-1.jpg.jpg?v=639211014441300000"
+     },
+     {
+      "imageUrl": "https://mash.vteximg.com.br/arquivos/ids/426982/683.01PT00-2.jpg.jpg?v=639211014446130000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 125.9,
+       "ListPrice": 125.9,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "2147406927",
+    "name": "Camiseta Básica de Microfibra Preto GG",
+    "Tamanho": [
+     "GG"
+    ],
+    "Cor": [
+     "PRETO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://mash.vteximg.com.br/arquivos/ids/426986/683.01PT00-1.jpg.jpg?v=639211014595870000"
+     },
+     {
+      "imageUrl": "https://mash.vteximg.com.br/arquivos/ids/426987/683.01PT00-2.jpg.jpg?v=639211014606130000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 125.9,
+       "ListPrice": 125.9,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "2147406928",
+    "name": "Camiseta Básica de Microfibra Preto M",
+    "Tamanho": [
+     "M"
+    ],
+    "Cor": [
+     "PRETO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://mash.vteximg.com.br/arquivos/ids/426991/683.01PT00-1.jpg.jpg?v=639211014701000000"
+     },
+     {
+      "imageUrl": "https://mash.vteximg.com.br/arquivos/ids/426992/683.01PT00-2.jpg.jpg?v=639211014706300000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 125.9,
+       "ListPrice": 125.9,
+       "IsAvailable": true
+      }
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "productId": "2146189005",
+  "productName": "Camiseta Básica de Microfibra Branco",
+  "brand": "Mash",
+  "categories": [
+   "/Fitness/Camisetas/",
+   "/Fitness/"
+  ],
+  "link": "https://www.mash.com.br/camiseta-basica-de-microfibra-branco/p",
+  "Idade": [
+   "Adulto"
+  ],
+  "description": "- Camiseta Básica de Microfibra.",
+  "items": [
+   {
+    "itemId": "2147406922",
+    "name": "Camiseta Básica de Microfibra Branco G",
+    "Tamanho": [
+     "G"
+    ],
+    "Cor": [
+     "BRANCO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://mash.vteximg.com.br/arquivos/ids/426961/683.01BR00-1.jpg.jpg?v=639211013862530000"
+     },
+     {
+      "imageUrl": "https://mash.vteximg.com.br/arquivos/ids/426962/683.01BR00-2.jpg.jpg?v=639211013866900000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 125.9,
+       "ListPrice": 125.9,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "2147406923",
+    "name": "Camiseta Básica de Microfibra Branco GG",
+    "Tamanho": [
+     "GG"
+    ],
+    "Cor": [
+     "BRANCO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://mash.vteximg.com.br/arquivos/ids/426966/683.01BR00-1.jpg.jpg?v=639211013958170000"
+     },
+     {
+      "imageUrl": "https://mash.vteximg.com.br/arquivos/ids/426967/683.01BR00-2.jpg.jpg?v=639211013967100000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 125.9,
+       "ListPrice": 125.9,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "2147406924",
+    "name": "Camiseta Básica de Microfibra Branco M",
+    "Tamanho": [
+     "M"
+    ],
+    "Cor": [
+     "BRANCO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://mash.vteximg.com.br/arquivos/ids/426971/683.01BR00-1.jpg.jpg?v=639211014106270000"
+     },
+     {
+      "imageUrl": "https://mash.vteximg.com.br/arquivos/ids/426972/683.01BR00-2.jpg.jpg?v=639211014114870000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 125.9,
+       "ListPrice": 125.9,
+       "IsAvailable": true
+      }
+     }
+    ]
+   }
+  ]
+ }
+]

@@ -1,0 +1,205 @@
+[
+ {
+  "productId": "19487",
+  "productName": "Camiseta Algodão Feminina Lupo",
+  "brand": "Lupo",
+  "categories": [
+   "/Produtos/Roupas Femininas/Blusa/",
+   "/Produtos/Roupas Femininas/",
+   "/Produtos/"
+  ],
+  "link": "https://www.lupo.com.br/t-shirt-algodo-45186-001/p",
+  "Faixa Etaria": [
+   "Adulto"
+  ],
+  "Gênero": [
+   "Feminino"
+  ],
+  "description": "<p>Confeccionada em algodão, esta blusa de gola alta e manga curta combina conforto e estilo atemporal. Com toque macio ",
+  "items": [
+   {
+    "itemId": "61319",
+    "name": "Tamanho: P | Cor: Rosa Nostalgia",
+    "Cor": [
+     "Rosa Nostalgia"
+    ],
+    "Tamanho": [
+     "P (36 a 38)"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://lupo.vteximg.com.br/arquivos/ids/338051/45186-001-5270-1.png?v=638950275398830000"
+     },
+     {
+      "imageUrl": "https://lupo.vteximg.com.br/arquivos/ids/338073/45186-001-5270-2.png?v=639227426031670000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 61.9,
+       "ListPrice": 87.9,
+       "IsAvailable": false
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "61322",
+    "name": "Tamanho: M | Cor: Rosa Nostalgia",
+    "Cor": [
+     "Rosa Nostalgia"
+    ],
+    "Tamanho": [
+     "M (40 a 42)"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://lupo.vteximg.com.br/arquivos/ids/337436/45186-001-5270-1.png?v=638950275354770000"
+     },
+     {
+      "imageUrl": "https://lupo.vteximg.com.br/arquivos/ids/337470/45186-001-5270-2.png?v=639227426032130000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 61.9,
+       "ListPrice": 87.9,
+       "IsAvailable": false
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "61318",
+    "name": "Tamanho: G | Cor: Rosa Nostalgia",
+    "Cor": [
+     "Rosa Nostalgia"
+    ],
+    "Tamanho": [
+     "G (44 a 46)"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://lupo.vteximg.com.br/arquivos/ids/336201/45186-001-5270-1.png?v=638950275264970000"
+     },
+     {
+      "imageUrl": "https://lupo.vteximg.com.br/arquivos/ids/336226/45186-001-5270-2.png?v=639227426031500000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 61.9,
+       "ListPrice": 87.9,
+       "IsAvailable": true
+      }
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "productId": "24350",
+  "productName": "Camiseta Modal Unissex Lupo",
+  "brand": "Lupo",
+  "categories": [
+   "/Produtos/Roupas/Camisetas/",
+   "/Produtos/Roupas/",
+   "/Produtos/"
+  ],
+  "link": "https://www.lupo.com.br/t-shirt-micromodal-unissex-sem-costura-75044-900/p",
+  "Faixa Etaria": [
+   "Adulto"
+  ],
+  "Gênero": [
+   "Masculino",
+   "Feminino"
+  ],
+  "description": "<p>Confeccionada em micromodal com poliamida, entrega um toque extremamente macio, leve e com caimento impecável no corp",
+  "items": [
+   {
+    "itemId": "66974",
+    "name": "Tamanho: P | Cor: Verde Oliva",
+    "Cor": [
+     "Verde Oliva - 4530"
+    ],
+    "Tamanho": [
+     "P"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://lupo.vteximg.com.br/arquivos/ids/357794/75044-900-4530-1.png?v=639065062130900000"
+     },
+     {
+      "imageUrl": "https://lupo.vteximg.com.br/arquivos/ids/357795/75044-900-4530-4.png?v=639065062131070000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 161.9,
+       "ListPrice": 161.9,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "66983",
+    "name": "Tamanho: M | Cor: Verde Oliva",
+    "Cor": [
+     "Verde Oliva - 4530"
+    ],
+    "Tamanho": [
+     "M"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://lupo.vteximg.com.br/arquivos/ids/357799/75044-900-4530-1.png?v=639065062131230000"
+     },
+     {
+      "imageUrl": "https://lupo.vteximg.com.br/arquivos/ids/357800/75044-900-4530-4.png?v=639065062131230000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 161.9,
+       "ListPrice": 161.9,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "66969",
+    "name": "Tamanho: G | Cor: Verde Oliva",
+    "Cor": [
+     "Verde Oliva - 4530"
+    ],
+    "Tamanho": [
+     "G"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://lupo.vteximg.com.br/arquivos/ids/357804/75044-900-4530-1.png?v=639065062131530000"
+     },
+     {
+      "imageUrl": "https://lupo.vteximg.com.br/arquivos/ids/357805/75044-900-4530-4.png?v=639065062131530000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 161.9,
+       "ListPrice": 161.9,
+       "IsAvailable": true
+      }
+     }
+    ]
+   }
+  ]
+ }
+]

@@ -1,0 +1,200 @@
+[
+ {
+  "productId": "65537",
+  "productName": "Camiseta Bordado Caveira Branco",
+  "brand": "Aramis",
+  "categories": [
+   "/Outlet/Roupas/Camisetas/Camiseta Manga Curta/",
+   "/Outlet/Roupas/Camisetas/",
+   "/Outlet/Roupas/",
+   "/Outlet/"
+  ],
+  "link": "https://www.aramis.com.br/camiseta-bordado-caveira-branco-cs-11-0088-001/p",
+  "Cor": [
+   "Branco"
+  ],
+  "description": "A camiseta é confeccionada em malha de algodão com modelagem regular. A peça possui gola arredondada com acabamento cane",
+  "items": [
+   {
+    "itemId": "355672",
+    "name": "Camiseta Bordado Caveira Branco - P",
+    "Tamanho": [
+     "P"
+    ],
+    "Cor": [
+     "BRANCO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://aramismenswear.vteximg.com.br/arquivos/ids/1206217/CS110088_001_1-CAMISETA-BORDADO-CAVEIRA--PA-.jpg?v=638398867844670000"
+     },
+     {
+      "imageUrl": "https://aramismenswear.vteximg.com.br/arquivos/ids/1206463/CS110088_001_2-CAMISETA-BORDADO-CAVEIRA--PA-.jpg?v=638398869572200000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 169.9,
+       "ListPrice": 369.9,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "355673",
+    "name": "Camiseta Bordado Caveira Branco - M",
+    "Tamanho": [
+     "M"
+    ],
+    "Cor": [
+     "BRANCO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://aramismenswear.vteximg.com.br/arquivos/ids/1206226/CS110088_001_1-CAMISETA-BORDADO-CAVEIRA--PA-.jpg?v=638398867911870000"
+     },
+     {
+      "imageUrl": "https://aramismenswear.vteximg.com.br/arquivos/ids/1206468/CS110088_001_2-CAMISETA-BORDADO-CAVEIRA--PA-.jpg?v=638398869603900000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 169.9,
+       "ListPrice": 369.9,
+       "IsAvailable": false
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "355674",
+    "name": "Camiseta Bordado Caveira Branco - G",
+    "Tamanho": [
+     "G"
+    ],
+    "Cor": [
+     "BRANCO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://aramismenswear.vteximg.com.br/arquivos/ids/1206236/CS110088_001_1-CAMISETA-BORDADO-CAVEIRA--PA-.jpg?v=638398867986370000"
+     },
+     {
+      "imageUrl": "https://aramismenswear.vteximg.com.br/arquivos/ids/1206472/CS110088_001_2-CAMISETA-BORDADO-CAVEIRA--PA-.jpg?v=638398869650400000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 169.9,
+       "ListPrice": 369.9,
+       "IsAvailable": true
+      }
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "productId": "71347",
+  "productName": "Camiseta Stonada Azul Neblina",
+  "brand": "Aramis",
+  "categories": [
+   "/Outlet/Roupas/Camisetas/Camiseta Manga Curta/",
+   "/Outlet/Roupas/Camisetas/",
+   "/Outlet/Roupas/",
+   "/Outlet/"
+  ],
+  "link": "https://www.aramis.com.br/camiseta-stonada-azul-neblina-cs-01-3704-109/p",
+  "Cor": [
+   "Azul"
+  ],
+  "description": "Esta camiseta é confeccionada em algodão de alta qualidade, proporcionando conforto e respirabilidade. Com gola arredond",
+  "items": [
+   {
+    "itemId": "386543",
+    "name": "Camiseta Stonada Azul Neblina - P",
+    "Tamanho": [
+     "P"
+    ],
+    "Cor": [
+     "AZUL NEBLINA"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://aramismenswear.vteximg.com.br/arquivos/ids/1407049/CS013704_109_1-CAMISETA-STONADA-OUT--PA-.jpg?v=638739511776500000"
+     },
+     {
+      "imageUrl": "https://aramismenswear.vteximg.com.br/arquivos/ids/1407209/CS013704_109_2-CAMISETA-STONADA-OUT--PA-.jpg?v=638860292566800000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 119.9,
+       "ListPrice": 339.9,
+       "IsAvailable": false
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "386544",
+    "name": "Camiseta Stonada Azul Neblina - M",
+    "Tamanho": [
+     "M"
+    ],
+    "Cor": [
+     "AZUL NEBLINA"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://aramismenswear.vteximg.com.br/arquivos/ids/1407059/CS013704_109_1-CAMISETA-STONADA-OUT--PA-.jpg?v=638739511805830000"
+     },
+     {
+      "imageUrl": "https://aramismenswear.vteximg.com.br/arquivos/ids/1407215/CS013704_109_2-CAMISETA-STONADA-OUT--PA-.jpg?v=638860292568030000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 119.9,
+       "ListPrice": 339.9,
+       "IsAvailable": false
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "386545",
+    "name": "Camiseta Stonada Azul Neblina - G",
+    "Tamanho": [
+     "G"
+    ],
+    "Cor": [
+     "AZUL NEBLINA"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://aramismenswear.vteximg.com.br/arquivos/ids/1407068/CS013704_109_1-CAMISETA-STONADA-OUT--PA-.jpg?v=638739511834070000"
+     },
+     {
+      "imageUrl": "https://aramismenswear.vteximg.com.br/arquivos/ids/1407223/CS013704_109_2-CAMISETA-STONADA-OUT--PA-.jpg?v=638860292568370000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 119.9,
+       "ListPrice": 339.9,
+       "IsAvailable": false
+      }
+     }
+    ]
+   }
+  ]
+ }
+]

@@ -1,0 +1,206 @@
+[
+ {
+  "productId": "111167",
+  "productName": "Camiseta Slim Modal Color",
+  "brand": "RESERVA",
+  "categories": [
+   "/Reserva/Masculino/Camisetas/Coleção/",
+   "/Reserva/Masculino/Camisetas/",
+   "/Reserva/Masculino/",
+   "/Reserva/"
+  ],
+  "link": "https://www.usereserva.com/camiseta-slim-modal-color-0101797-040/p",
+  "gender": [
+   "Male"
+  ],
+  "age_group": [
+   "adult"
+  ],
+  "description": "<b>Camiseta Slim Modal Color</b>: confeccionada em modal com elastano, esta camiseta foi projetada para quem busca uma p",
+  "items": [
+   {
+    "itemId": "642227",
+    "name": "Preto - P",
+    "Tamanho": [
+     "P"
+    ],
+    "COR": [
+     "PRETO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://lojausereserva.vteximg.com.br/arquivos/ids/12643966/0101797040_01.jpg?v=639120234845570000"
+     },
+     {
+      "imageUrl": "https://lojausereserva.vteximg.com.br/arquivos/ids/12643943/0101797040_04.jpg?v=639120234844600000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 269.9,
+       "ListPrice": 299,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "642228",
+    "name": "Preto - M",
+    "Tamanho": [
+     "M"
+    ],
+    "COR": [
+     "PRETO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://lojausereserva.vteximg.com.br/arquivos/ids/12643944/0101797040_01.jpg?v=639120234844600000"
+     },
+     {
+      "imageUrl": "https://lojausereserva.vteximg.com.br/arquivos/ids/12643946/0101797040_06.jpg?v=639120234844770000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 269.9,
+       "ListPrice": 299,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "642229",
+    "name": "Preto - G",
+    "Tamanho": [
+     "G"
+    ],
+    "COR": [
+     "PRETO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://lojausereserva.vteximg.com.br/arquivos/ids/12643948/0101797040_01.jpg?v=639120234844770000"
+     },
+     {
+      "imageUrl": "https://lojausereserva.vteximg.com.br/arquivos/ids/12643951/0101797040_04.jpg?v=639120234845070000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 269.9,
+       "ListPrice": 299,
+       "IsAvailable": true
+      }
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "productId": "128896",
+  "productName": "Camiseta Slim Modal Color",
+  "brand": "RESERVA",
+  "categories": [
+   "/Reserva/Masculino/Camisetas/Coleção/",
+   "/Reserva/Masculino/Camisetas/",
+   "/Reserva/Masculino/",
+   "/Reserva/"
+  ],
+  "link": "https://www.usereserva.com/camiseta-slim-modal-color-0101797-955/p",
+  "gender": [
+   "Male"
+  ],
+  "age_group": [
+   "adult"
+  ],
+  "description": "<b>Camiseta Slim Modal Color</b>: confeccionada em modal com elastano, esta camiseta foi projetada para quem busca uma p",
+  "items": [
+   {
+    "itemId": "646800",
+    "name": "Malbec - P",
+    "Tamanho": [
+     "P"
+    ],
+    "COR": [
+     "AMARELO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://lojausereserva.vteximg.com.br/arquivos/ids/12836837/0101797955_01.jpg?v=639159457333970000"
+     },
+     {
+      "imageUrl": "https://lojausereserva.vteximg.com.br/arquivos/ids/12836836/0101797955_02.jpg?v=639159457332070000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 209.9,
+       "ListPrice": 299,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "646801",
+    "name": "Malbec - G",
+    "Tamanho": [
+     "G"
+    ],
+    "COR": [
+     "AMARELO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://lojausereserva.vteximg.com.br/arquivos/ids/12836822/0101797955_01.jpg?v=639159457324970000"
+     },
+     {
+      "imageUrl": "https://lojausereserva.vteximg.com.br/arquivos/ids/12836820/0101797955_02.jpg?v=639159457323030000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 209.9,
+       "ListPrice": 299,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "646803",
+    "name": "Malbec - Gg",
+    "Tamanho": [
+     "GG"
+    ],
+    "COR": [
+     "AMARELO"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://lojausereserva.vteximg.com.br/arquivos/ids/12836815/0101797955_01.jpg?v=639159457320370000"
+     },
+     {
+      "imageUrl": "https://lojausereserva.vteximg.com.br/arquivos/ids/12836812/0101797955_02.jpg?v=639159457319730000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 209.9,
+       "ListPrice": 299,
+       "IsAvailable": true
+      }
+     }
+    ]
+   }
+  ]
+ }
+]

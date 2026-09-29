@@ -1,0 +1,182 @@
+[
+ {
+  "productId": "38836",
+  "productName": "Camiseta Feminina Slim Em Algodão - Rosa",
+  "brand": "Hering Adulto",
+  "categories": [
+   "/Camisetas/"
+  ],
+  "link": "https://www.hering.com.br/camiseta-feminina-slim-em-algodao-4h7aksten/p",
+  "GÊNERO": [
+   "Feminino"
+  ],
+  "COR": [
+   "ROSA"
+  ],
+  "description": "Versátil e sofisticada, essa camiseta é confeccionada em malha de algodão interlock com toque premium, que garante confo",
+  "items": [
+   {
+    "itemId": "225669",
+    "name": "XP",
+    "Tamanho": [
+     "XP"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://hering.vteximg.com.br/arquivos/ids/6734630/4H7A-KSTEN-C1.jpg?v=639228540314670000"
+     },
+     {
+      "imageUrl": "https://hering.vteximg.com.br/arquivos/ids/6734649/4H7A-KSTEN-C2.jpg?v=639228540372230000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 99.99,
+       "ListPrice": 99.99,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "225687",
+    "name": "P",
+    "Tamanho": [
+     "P"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://hering.vteximg.com.br/arquivos/ids/6734702/4H7A-KSTEN-C1.jpg?v=639228540511300000"
+     },
+     {
+      "imageUrl": "https://hering.vteximg.com.br/arquivos/ids/6734716/4H7A-KSTEN-C2.jpg?v=639228540553730000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 99.99,
+       "ListPrice": 99.99,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "225696",
+    "name": "M",
+    "Tamanho": [
+     "M"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://hering.vteximg.com.br/arquivos/ids/6734753/4H7A-KSTEN-C1.jpg?v=639228540675570000"
+     },
+     {
+      "imageUrl": "https://hering.vteximg.com.br/arquivos/ids/6734771/4H7A-KSTEN-C2.jpg?v=639228540724970000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 99.99,
+       "ListPrice": 99.99,
+       "IsAvailable": true
+      }
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "productId": "39396",
+  "productName": "Camiseta Feminina Em Malha Premium - Azul",
+  "brand": "Hering Adulto",
+  "categories": [
+   "/Regatas/"
+  ],
+  "link": "https://www.hering.com.br/camiseta-feminina-em-malha-premium-4hc5a53en/p",
+  "GÊNERO": [
+   "Feminino"
+  ],
+  "COR": [
+   "azul"
+  ],
+  "description": "Camiseta feminina em malha premium com acabamento ultrasoft, ideal para compor looks modernos e confortáveis. Sua modela",
+  "items": [
+   {
+    "itemId": "228559",
+    "name": "XP",
+    "Tamanho": [
+     "XP"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://hering.vteximg.com.br/arquivos/ids/6762613/4HC5-A53EN-C1.jpg?v=639232067174300000"
+     },
+     {
+      "imageUrl": "https://hering.vteximg.com.br/arquivos/ids/6762626/4HC5-A53EN-C2.jpg?v=639232067229670000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 99.99,
+       "ListPrice": 99.99,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "228567",
+    "name": "P",
+    "Tamanho": [
+     "P"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://hering.vteximg.com.br/arquivos/ids/6762655/4HC5-A53EN-C1.jpg?v=639232067338300000"
+     },
+     {
+      "imageUrl": "https://hering.vteximg.com.br/arquivos/ids/6762669/4HC5-A53EN-C2.jpg?v=639232067379100000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 99.99,
+       "ListPrice": 99.99,
+       "IsAvailable": true
+      }
+     }
+    ]
+   },
+   {
+    "itemId": "228576",
+    "name": "M",
+    "Tamanho": [
+     "M"
+    ],
+    "images": [
+     {
+      "imageUrl": "https://hering.vteximg.com.br/arquivos/ids/6762700/4HC5-A53EN-C1.jpg?v=639232067486300000"
+     },
+     {
+      "imageUrl": "https://hering.vteximg.com.br/arquivos/ids/6762714/4HC5-A53EN-C2.jpg?v=639232067526330000"
+     }
+    ],
+    "sellers": [
+     {
+      "commertialOffer": {
+       "Price": 99.99,
+       "ListPrice": 99.99,
+       "IsAvailable": true
+      }
+     }
+    ]
+   }
+  ]
+ }
+]

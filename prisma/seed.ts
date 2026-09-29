@@ -144,6 +144,57 @@ const SOURCES = [
       ],
     },
   },
+  // Lojas VTEX com catálogo público liberado no robots.txt (verificado em 2026-09-29). Sem
+  // `config`, a sincronização percorre os termos padrão (DEFAULT_VTEX_SEARCH_TERMS), dividindo
+  // `maxPages` entre eles; pra ajustar, PATCH /sources/:id com config.searchTerms ou categories.
+  {
+    name: 'Hering',
+    slug: 'hering',
+    baseUrl: 'https://www.hering.com.br',
+    enabled: true,
+    crawlInterval: 360,
+    maxPages: 1000,
+  },
+  {
+    name: 'Reserva',
+    slug: 'reserva',
+    baseUrl: 'https://www.usereserva.com',
+    enabled: true,
+    crawlInterval: 360,
+    maxPages: 1000,
+  },
+  {
+    name: 'Malwee',
+    slug: 'malwee',
+    baseUrl: 'https://www.malwee.com.br',
+    enabled: true,
+    crawlInterval: 360,
+    maxPages: 1000,
+  },
+  {
+    name: 'Aramis',
+    slug: 'aramis',
+    baseUrl: 'https://www.aramis.com.br',
+    enabled: true,
+    crawlInterval: 360,
+    maxPages: 500,
+  },
+  {
+    name: 'Mash',
+    slug: 'mash',
+    baseUrl: 'https://www.mash.com.br',
+    enabled: true,
+    crawlInterval: 360,
+    maxPages: 300,
+  },
+  {
+    name: 'Lupo',
+    slug: 'lupo',
+    baseUrl: 'https://www.lupo.com.br',
+    enabled: true,
+    crawlInterval: 360,
+    maxPages: 300,
+  },
   {
     // Desabilitada: requer integração autorizada (API oficial/afiliados). Ver README.
     name: 'Amazon',

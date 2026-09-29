@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { CACrawler } from '../../src/modules/crawlers/ca/ca.crawler.js';
-import { mapVtexProduct } from '../../src/modules/crawlers/ca/ca.mapper.js';
+import { mapVtexProduct } from '../../src/modules/crawlers/vtex/vtex.mapper.js';
 import {
   parseResourcesTotal,
   parseVtexSearchResponse,
-} from '../../src/modules/crawlers/ca/ca.parser.js';
+} from '../../src/modules/crawlers/vtex/vtex.parser.js';
 import type { CrawlItem } from '../../src/modules/crawlers/crawler.types.js';
 import { normalizeProduct } from '../../src/modules/crawlers/normalizer/product.normalizer.js';
 import { HttpClient } from '../../src/modules/crawlers/shared/http-client.js';
