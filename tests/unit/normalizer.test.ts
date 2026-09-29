@@ -136,6 +136,21 @@ describe('normalizeProduct', () => {
     expect(result.searchText).toBe('camisa masculina de linho preta basics preto masculino');
   });
 
+  it('infantil no nome ou na categoria vence o gênero informado pela loja', () => {
+    expect(
+      normalizeProduct({
+        ...base,
+        name: 'Jaqueta Menino Em Moletom Malwee Kids',
+        gender: 'Masculino',
+      }).gender,
+    ).toBe('infantil');
+    expect(
+      normalizeProduct({ ...base, gender: 'Feminino', category: '/Moda Infantil/Meninas/' }).gender,
+    ).toBe('infantil');
+    // Sem sinal infantil, o gênero da loja continua valendo.
+    expect(normalizeProduct({ ...base, gender: 'Feminino' }).gender).toBe('feminino');
+  });
+
   it('produto sem preço é recusado (não entra no catálogo)', () => {
     expect(() => normalizeProduct({ ...base, price: 0 })).toThrow(ProductNormalizationError);
     expect(() => normalizeProduct({ ...base, price: Number.NaN })).toThrow(

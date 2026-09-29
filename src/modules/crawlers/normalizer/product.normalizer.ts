@@ -164,12 +164,12 @@ export function normalizeProduct(product: ScrapedProduct): NormalizedProduct {
 
   const description = normalizeDescription(product.description);
   const brand = product.brand ? cleanWhitespace(product.brand) || null : null;
-  const gender = normalizeGender(
-    product.gender,
-    name,
-    product.category,
-    description?.slice(0, 200),
-  );
+  // Infantil no nome ou na categoria vence o campo de gênero da loja: "Jaqueta Menino ... Kids"
+  // vem com gênero "Masculino" em algumas lojas e escapava do filtro que esconde peças infantis.
+  const isKids = [name, product.category].some((text) => normalizeGender(text) === 'infantil');
+  const gender = isKids
+    ? 'infantil'
+    : normalizeGender(product.gender, name, product.category, description?.slice(0, 200));
   const color = normalizeColor(product.color, name);
   const categorySlug = normalizeCategory(name, product.category);
   const size = product.size ? cleanWhitespace(product.size).toUpperCase() || null : null;
