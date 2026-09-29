@@ -20,6 +20,11 @@ const envObjectSchema = z.object({
 
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
   RATE_LIMIT_WINDOW: z.string().default('1 minute'),
+  /**
+   * IPs/redes fora do rate limit por IP, separados por vírgula (ex.: "172.31.37.117" = backend na
+   * VPC). O IP é o da conexão (não o X-Forwarded-For). Vazio = todos limitados.
+   */
+  RATE_LIMIT_ALLOWLIST: z.string().default(''),
 
   CACHE_TTL: z.coerce.number().int().positive().default(300),
   CACHE_PRODUCT_TTL: z.coerce.number().int().positive().default(600),

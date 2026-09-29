@@ -73,6 +73,7 @@ export class FixtureFetcher implements GoogleShoppingFetcher<GoogleShoppingHtmlP
 export interface GoogleShoppingTestAppOptions {
   maxConcurrency?: number;
   maxQueue?: number;
+  rateLimitAllowList?: string;
 }
 
 /**
@@ -110,6 +111,7 @@ export async function buildGoogleShoppingTestApp(options: GoogleShoppingTestAppO
     container,
     health: { database: async () => undefined, redis: async () => undefined },
     logger: false,
+    rateLimitAllowList: options.rateLimitAllowList,
   });
   await app.ready();
   return { app, fetcher, cache };

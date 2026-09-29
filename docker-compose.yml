@@ -10,7 +10,11 @@ x-app-env: &app-env
   REDIS_URL: redis://redis:6379
   RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
   RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-1 minute}
+  # Redes do Docker: o backend local (outro compose) chega por elas e fica fora do limite.
+  RATE_LIMIT_ALLOWLIST: ${RATE_LIMIT_ALLOWLIST:-172.16.0.0/12}
   CRAWLER_REQUEST_DELAY: ${CRAWLER_REQUEST_DELAY:-1000}
+  # Jobs simultâneos no worker: a busca sob demanda vira 1 job por loja (mesmo padrão da produção).
+  CRAWLER_CONCURRENCY: ${CRAWLER_CONCURRENCY:-5}
   SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-false}
   GOOGLE_SHOPPING_FETCHER: ${GOOGLE_SHOPPING_FETCHER:-disabled}
   GOOGLE_SHOPPING_SERPAPI_KEY: ${GOOGLE_SHOPPING_SERPAPI_KEY:-}

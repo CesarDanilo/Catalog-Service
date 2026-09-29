@@ -10,6 +10,12 @@ import type {
   UpsertResult,
 } from './product.types.js';
 
+/**
+ * Tempo máximo da transação que grava um produto e suas imagens. O padrão do Prisma (5s) estourava
+ * com várias lojas gravando juntas e o disco lento, e a peça se perdia (medido em 2026-09-29).
+ */
+const TRANSACTION_TIMEOUT_MS = 15_000;
+
 const summarySelect = { id: true, name: true, slug: true } as const;
 
 /** Campos da listagem: nunca carrega rawData, description ou imagens. */
@@ -140,17 +146,20 @@ export class ProductRepository {
       lastScrapedAt: scrapedAt,
     };
 
-    return this.prisma.$transaction(async (tx) => {
-      const existing = await tx.product.findUnique({ where: key, select: { id: true } });
-      const saved = await tx.product.upsert({
-        where: key,
-        create: { sourceId, externalId: product.externalId, ...data },
-        update: data,
-        select: { id: true },
-      });
-      await this.replaceImages(tx, saved.id, product.images);
-      return { id: saved.id, created: existing === null };
-    });
+    return this.prisma.$transaction(
+      async (tx) => {
+        const existing = await tx.product.findUnique({ where: key, select: { id: true } });
+        const saved = await tx.product.upsert({
+          where: key,
+          create: { sourceId, externalId: product.externalId, ...data },
+          update: data,
+          select: { id: true },
+        });
+        await this.replaceImages(tx, saved.id, product.images);
+        return { id: saved.id, created: existing === null };
+      },
+      { timeout: TRANSACTION_TIMEOUT_MS },
+    );
   }
 
   /** Marca como indisponíveis as peças da fonte não vistas desde `seenBefore`. Devolve quantas. */

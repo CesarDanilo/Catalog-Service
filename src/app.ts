@@ -15,6 +15,7 @@ import { liveSearchRoutes } from './modules/live-search/live-search.routes.js';
 import { productRoutes } from './modules/products/product.routes.js';
 import { sourceRoutes } from './modules/sources/source.routes.js';
 import { errorHandler, notFoundHandler } from './shared/errors/error-handler.js';
+import { isAllowListed, parseAllowList } from './shared/http/rate-limit-allowlist.js';
 
 export interface AppDeps {
   container: Container;
@@ -22,6 +23,8 @@ export interface AppDeps {
   /** Redis para o rate limit compartilhado entre instâncias (opcional: usa memória). */
   rateLimitRedis?: Redis;
   logger?: FastifyServerOptions['logger'];
+  /** IPs/redes fora do rate limit (padrão: RATE_LIMIT_ALLOWLIST). */
+  rateLimitAllowList?: string;
 }
 
 export const API_PREFIX = '/api/v1';
@@ -86,8 +89,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
     methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
   });
+  const rateLimitAllowList = parseAllowList(deps.rateLimitAllowList ?? env.RATE_LIMIT_ALLOWLIST);
   await app.register(rateLimit, {
     max: env.RATE_LIMIT_MAX,
+    // Vale também pro limite próprio de rotas (ex.: busca ao vivo no Google Shopping).
+    allowList: (request) => isAllowListed(rateLimitAllowList, request),
     timeWindow: env.RATE_LIMIT_WINDOW,
     ...(deps.rateLimitRedis && { redis: deps.rateLimitRedis, nameSpace: 'catalog:ratelimit:' }),
     errorResponseBuilder: (_request, context) => ({

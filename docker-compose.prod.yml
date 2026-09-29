@@ -24,11 +24,13 @@ x-app-env: &app-env
   REDIS_URL: redis://redis:6379
   RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-300}
   RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-1 minute}
+  # IP privado do backend: fica fora do limite (uma busca nova dele faz ~90–130 chamadas).
+  RATE_LIMIT_ALLOWLIST: ${RATE_LIMIT_ALLOWLIST:-}
   CRAWLER_REQUEST_DELAY: ${CRAWLER_REQUEST_DELAY:-1000}
-  # Jobs simultâneos no worker. 3 = a sincronização completa (minutos) ocupa um e sobram dois pra
-  # busca sob demanda — uma loja não espera a outra: o backend espera ~8s, e a C&A (~3s) não pode
-  # ficar na fila atrás da Renner (~30s, usa navegador).
-  CRAWLER_CONCURRENCY: ${CRAWLER_CONCURRENCY:-3}
+  # Jobs simultâneos no worker. Cada busca sob demanda do backend vira 1 job por loja (8 lojas);
+  # com 3, a C&A chegou a esperar 13s na fila. 5 = a sincronização completa ocupa um e sobram
+  # quatro pra busca. Só a Renner usa navegador (~200 MB); as lojas VTEX são só HTTP/JSON.
+  CRAWLER_CONCURRENCY: ${CRAWLER_CONCURRENCY:-5}
   # Sincronização periódica das lojas (cada fonte com `crawlInterval`) — mantém o catálogo atualizado.
   SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
   # Lojas desligadas sem mexer no banco (ex.: "amazon,ca") — ver .env.example.
