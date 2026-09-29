@@ -42,10 +42,11 @@ describe('CrawlerRegistry', () => {
     expect(createCrawlerRegistry(context, new Set()).list().sort()).toEqual([
       'amazon',
       'ca',
+      'google-shopping',
       'renner',
     ]);
     const registry = createCrawlerRegistry(context, parseSourceList(' Amazon , ca,'));
-    expect(registry.list()).toEqual(['renner']);
+    expect(registry.list()).toEqual(['renner', 'google-shopping']);
     expect(registry.has('ca')).toBe(false);
   });
 

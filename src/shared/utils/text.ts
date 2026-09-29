@@ -42,3 +42,11 @@ export function toTitleCase(value: string): string {
     )
     .join(' ');
 }
+
+/**
+ * Forma canônica de um termo de busca, pra chave de cache e logs: " Camiseta   Preta " e
+ * "camiseta preta" viram "camiseta preta". Mantém acentos e pontuação — não muda o que é buscado.
+ */
+export function normalizeSearchQuery(value: string): string {
+  return cleanWhitespace(value.normalize('NFC')).toLowerCase();
+}

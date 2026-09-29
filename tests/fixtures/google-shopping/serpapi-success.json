@@ -1,0 +1,33 @@
+{
+  "search_metadata": { "status": "Success" },
+  "shopping_results": [
+    {
+      "position": 1,
+      "title": "Camiseta Preta Básica Masculina",
+      "product_link": "https://www.google.com.br/shopping/product/111?gl=br",
+      "product_id": "111",
+      "source": "Loja Exemplo",
+      "price": "R$ 49,90",
+      "extracted_price": 49.9,
+      "rating": 4.7,
+      "reviews": 352,
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:111"
+    },
+    {
+      "position": 2,
+      "title": "Camiseta Preta Oversized",
+      "link": "https://www.modacenter.com.br/p/222",
+      "product_id": 222,
+      "source": "Moda Center",
+      "price": "R$ 1.299,00",
+      "thumbnail": "javascript:alert(1)"
+    },
+    {
+      "position": 3,
+      "title": "Camiseta Sem Preço",
+      "product_link": "https://www.google.com.br/shopping/product/333",
+      "rating": "não numérico"
+    },
+    "item-que-nao-e-objeto"
+  ]
+}

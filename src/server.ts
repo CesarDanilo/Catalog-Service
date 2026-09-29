@@ -20,7 +20,8 @@ async function main() {
 
   const queueConnection = createQueueConnection();
   const queue = new BullCrawlerQueue(queueConnection);
-  // A API só precisa saber quais fontes têm crawler; nenhum crawler é executado aqui.
+  // A API usa o registro pra saber quais fontes têm crawler e pra busca ao vivo
+  // (/providers/:source/search). Sincronizações continuam só no worker.
   const registry = createCrawlerRegistry(createCrawlerContext());
 
   const container = createContainer({
@@ -28,6 +29,7 @@ async function main() {
     redis,
     queue,
     hasCrawler: (slug) => registry.has(slug),
+    liveSearchProviders: registry,
   });
 
   const app = await buildApp({
@@ -38,6 +40,7 @@ async function main() {
 
   registerShutdown(app.log, [
     ['http server', () => app.close()],
+    ['crawlers', () => registry.closeAll()],
     ['queue', () => queue.close()],
     ['queue connection', async () => void (await queueConnection.quit())],
     ['redis', disconnectRedis],

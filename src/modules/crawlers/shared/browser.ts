@@ -1,4 +1,4 @@
-import type { Browser } from 'playwright';
+import type { Browser, Page } from 'playwright';
 import { CrawlerError } from '../../../shared/errors/app-error.js';
 
 export interface RenderOptions {
@@ -6,6 +6,16 @@ export interface RenderOptions {
   timeoutMs: number;
   /** Seletor CSS que indica que o conteúdo dinâmico foi carregado. */
   waitForSelector: string;
+}
+
+export interface PageOptions {
+  userAgent: string;
+  /** Padrão: pt-BR. */
+  locale?: string;
+  /** Tipos de recurso que não são baixados (ex.: image, font, media). */
+  blockResources?: readonly string[];
+  /** Abortar fecha o contexto na hora — qualquer operação pendente na página rejeita. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -16,26 +26,51 @@ export interface RenderOptions {
 export class BrowserPool {
   private browser: Promise<Browser> | null = null;
 
-  async renderHtml(url: string, options: RenderOptions): Promise<string> {
+  /**
+   * Abre uma página num contexto novo e isolado, entrega pra `task` e fecha o contexto no fim
+   * (sucesso, erro ou abort) — nenhuma página fica aberta.
+   */
+  async withPage<T>(options: PageOptions, task: (page: Page) => Promise<T>): Promise<T> {
+    options.signal?.throwIfAborted();
     const browser = await this.getBrowser();
-    const context = await browser.newContext({ userAgent: options.userAgent, locale: 'pt-BR' });
+    const context = await browser.newContext({
+      userAgent: options.userAgent,
+      locale: options.locale ?? 'pt-BR',
+    });
+    const closeOnAbort = () => void context.close().catch(() => undefined);
+    options.signal?.addEventListener('abort', closeOnAbort, { once: true });
     try {
+      // Abortado enquanto o Chromium abria: não chega a abrir página.
+      options.signal?.throwIfAborted();
       const page = await context.newPage();
-      // Imagens, fontes e mídia não são necessárias para extrair links.
-      await page.route('**/*', (route) =>
-        ['image', 'font', 'media'].includes(route.request().resourceType())
-          ? route.abort()
-          : route.continue(),
-      );
-      await page.goto(url, { timeout: options.timeoutMs, waitUntil: 'domcontentloaded' });
-      await page
-        .waitForSelector(options.waitForSelector, { timeout: options.timeoutMs })
-        .catch(() => undefined);
-      return await page.content();
-    } catch (error) {
-      throw new CrawlerError(`Failed to render ${url}: ${(error as Error).message}`);
+      const blocked = options.blockResources ?? [];
+      if (blocked.length > 0) {
+        await page.route('**/*', (route) =>
+          blocked.includes(route.request().resourceType()) ? route.abort() : route.continue(),
+        );
+      }
+      return await task(page);
     } finally {
-      await context.close();
+      options.signal?.removeEventListener('abort', closeOnAbort);
+      await context.close().catch(() => undefined);
+    }
+  }
+
+  async renderHtml(url: string, options: RenderOptions): Promise<string> {
+    try {
+      // Imagens, fontes e mídia não são necessárias para extrair links.
+      return await this.withPage(
+        { userAgent: options.userAgent, blockResources: ['image', 'font', 'media'] },
+        async (page) => {
+          await page.goto(url, { timeout: options.timeoutMs, waitUntil: 'domcontentloaded' });
+          await page
+            .waitForSelector(options.waitForSelector, { timeout: options.timeoutMs })
+            .catch(() => undefined);
+          return await page.content();
+        },
+      );
+    } catch (error) {
+      throw this.renderError(url, error);
     }
   }
 
@@ -50,28 +85,26 @@ export class BrowserPool {
     url: string,
     options: Omit<RenderOptions, 'waitForSelector'> & { responseUrl: RegExp },
   ): Promise<unknown> {
-    const browser = await this.getBrowser();
-    const context = await browser.newContext({ userAgent: options.userAgent, locale: 'pt-BR' });
     try {
-      const page = await context.newPage();
-      await page.route('**/*', (route) =>
-        ['image', 'font', 'media', 'stylesheet'].includes(route.request().resourceType())
-          ? route.abort()
-          : route.continue(),
+      return await this.withPage(
+        {
+          userAgent: options.userAgent,
+          blockResources: ['image', 'font', 'media', 'stylesheet'],
+        },
+        async (page) => {
+          const captured = page
+            .waitForResponse(
+              (response) => options.responseUrl.test(response.url()) && response.status() === 200,
+              { timeout: options.timeoutMs },
+            )
+            .then((response) => response.json() as Promise<unknown>)
+            .catch(() => null);
+          await page.goto(url, { timeout: options.timeoutMs, waitUntil: 'domcontentloaded' });
+          return await captured;
+        },
       );
-      const captured = page
-        .waitForResponse(
-          (response) => options.responseUrl.test(response.url()) && response.status() === 200,
-          { timeout: options.timeoutMs },
-        )
-        .then((response) => response.json() as Promise<unknown>)
-        .catch(() => null);
-      await page.goto(url, { timeout: options.timeoutMs, waitUntil: 'domcontentloaded' });
-      return await captured;
     } catch (error) {
-      throw new CrawlerError(`Failed to render ${url}: ${(error as Error).message}`);
-    } finally {
-      await context.close();
+      throw this.renderError(url, error);
     }
   }
 
@@ -80,6 +113,12 @@ export class BrowserPool {
     const browser = await this.browser.catch(() => null);
     this.browser = null;
     await browser?.close();
+  }
+
+  private renderError(url: string, error: unknown): CrawlerError {
+    // Browser indisponível já vem como CrawlerError não-retentável.
+    if (error instanceof CrawlerError) return error;
+    return new CrawlerError(`Failed to render ${url}: ${(error as Error).message}`);
   }
 
   private getBrowser(): Promise<Browser> {

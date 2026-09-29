@@ -1,8 +1,12 @@
-import { disabledSources } from '../../config/env.js';
+import { disabledSources, env } from '../../config/env.js';
 import { AmazonCrawler } from './amazon/amazon.crawler.js';
 import { CACrawler } from './ca/ca.crawler.js';
 import type { Crawler } from './crawler.interface.js';
 import { CrawlerRegistry } from './crawler.registry.js';
+import {
+  createGoogleShoppingProvider,
+  googleShoppingConfigFromEnv,
+} from './google-shopping/index.js';
 import { RennerCrawler } from './renner/renner.crawler.js';
 import type { CrawlerContext } from './shared/crawler-context.js';
 
@@ -23,6 +27,12 @@ export function createCrawlerRegistry(
     }),
     new CACrawler(context.createHttpClient()),
     new AmazonCrawler(),
+    createGoogleShoppingProvider({
+      config: googleShoppingConfigFromEnv(env),
+      browser: context.browser,
+      userAgent: context.userAgent,
+      logger: context.logger,
+    }),
   ];
   const registry = new CrawlerRegistry();
   for (const crawler of crawlers) {

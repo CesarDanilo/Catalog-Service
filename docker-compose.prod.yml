@@ -35,6 +35,9 @@ x-app-env: &app-env
   CRAWLER_DISABLED_SOURCES: ${CRAWLER_DISABLED_SOURCES:-}
   # Peça não vista numa sincronização completa há mais de N dias vira indisponível.
   STALE_PRODUCT_DAYS: ${STALE_PRODUCT_DAYS:-3}
+  # Busca ao vivo no Google Shopping — desligada por padrão; em produção só com a SerpApi.
+  GOOGLE_SHOPPING_FETCHER: ${GOOGLE_SHOPPING_FETCHER:-disabled}
+  GOOGLE_SHOPPING_SERPAPI_KEY: ${GOOGLE_SHOPPING_SERPAPI_KEY:-}
 
 services:
   migrate:

@@ -38,6 +38,9 @@ export function errorResponses(...statusCodes: number[]): Record<number, unknown
     409: 'Conflito com o estado atual do recurso',
     429: 'Limite de requisições excedido',
     500: 'Erro interno',
+    502: 'Resposta inválida da fonte externa',
+    503: 'Fonte externa indisponível ou bloqueou o acesso',
+    504: 'Fonte externa não respondeu a tempo',
   };
   return Object.fromEntries(
     statusCodes.map((code) => [

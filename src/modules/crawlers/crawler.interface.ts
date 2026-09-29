@@ -1,4 +1,9 @@
-import type { CrawlItem, CrawlOptions } from './crawler.types.js';
+import type {
+  CrawlItem,
+  CrawlOptions,
+  LiveSearchParams,
+  LiveSearchResult,
+} from './crawler.types.js';
 
 /**
  * Contrato de um crawler de loja. Novas lojas implementam esta interface e são registradas
@@ -16,6 +21,12 @@ export interface Crawler {
 
   /** Sincroniza o catálogo (ou parte configurada dele). */
   crawl(options?: CrawlOptions): AsyncIterable<CrawlItem>;
+
+  /**
+   * Busca ao vivo na fonte, sem persistir (opcional). Só fontes que implementam aparecem em
+   * GET /api/v1/providers/:source/search.
+   */
+  liveSearch?(params: LiveSearchParams): Promise<LiveSearchResult>;
 
   /** Libera recursos (ex.: browser do Playwright). */
   close?(): Promise<void>;

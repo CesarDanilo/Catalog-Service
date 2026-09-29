@@ -11,6 +11,7 @@ import type { Container } from './container.js';
 import { categoryRoutes } from './modules/categories/category.routes.js';
 import { crawlJobRoutes } from './modules/crawl-jobs/crawl-job.routes.js';
 import { healthRoutes, type HealthChecks } from './modules/health/health.routes.js';
+import { liveSearchRoutes } from './modules/live-search/live-search.routes.js';
 import { productRoutes } from './modules/products/product.routes.js';
 import { sourceRoutes } from './modules/sources/source.routes.js';
 import { errorHandler, notFoundHandler } from './shared/errors/error-handler.js';
@@ -110,6 +111,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
         { name: 'products', description: 'Busca e detalhe de produtos' },
         { name: 'categories', description: 'Categorias hierárquicas' },
         { name: 'sources', description: 'Lojas/fontes e sincronização' },
+        { name: 'providers', description: 'Busca ao vivo em providers externos' },
         { name: 'health', description: 'Health checks' },
       ],
     },
@@ -124,6 +126,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       await api.register(categoryRoutes(controllers.categories));
       await api.register(sourceRoutes(controllers.sources));
       await api.register(crawlJobRoutes(controllers.crawlJobs));
+      await api.register(liveSearchRoutes(controllers.liveSearch));
     },
     { prefix: API_PREFIX },
   );

@@ -1,0 +1,7 @@
+{
+  "search_metadata": { "status": "Success" },
+  "categorized_shopping_results": [
+    { "title": "Mais vendidos", "shopping_results": [ { "position": 1, "title": "Camiseta A", "product_link": "https://www.google.com.br/shopping/product/a", "extracted_price": 30, "price": "R$ 30,00" } ] },
+    { "title": "Promoções", "shopping_results": [ { "position": 1, "title": "Camiseta B", "product_link": "https://www.google.com.br/shopping/product/b", "extracted_price": 20, "price": "R$ 20,00" } ] }
+  ]
+}

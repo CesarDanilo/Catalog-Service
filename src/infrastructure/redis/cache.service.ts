@@ -21,6 +21,9 @@ export const cacheKeys = {
     `${CACHE_PREFIX}:search:${version}:${hashFilters(filters)}`,
   searchVersion: () => `${CACHE_PREFIX}:search-version`,
   categories: () => `${CACHE_PREFIX}:categories`,
+  /** Lote de uma busca ao vivo num provider (ex.: catalog:live-search:google-shopping:BR:pt-BR:<hash>). */
+  liveSearch: (source: string, country: string, language: string, normalizedQuery: string) =>
+    `${CACHE_PREFIX}:live-search:${source}:${country}:${language}:${hashFilters({ q: normalizedQuery })}`,
 };
 
 /** Hash estável: a ordem das chaves e valores vazios não alteram o resultado. */
