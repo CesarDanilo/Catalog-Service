@@ -1,0 +1,345 @@
+{
+  "info": {
+    "_postman_id": "7c1e2b7a-catalog-service-0001",
+    "name": "Catalog Service",
+    "description": "Rotas da API do catalog-service. Preencha `baseUrl` no ambiente (padrão http://localhost:3333). Rode primeiro 'Fontes > Listar fontes' e 'Produtos > Listar produtos': os scripts de teste salvam sourceId, productId e crawlJobId automaticamente.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3333", "type": "string" },
+    { "key": "sourceId", "value": "", "type": "string" },
+    { "key": "productId", "value": "", "type": "string" },
+    { "key": "crawlJobId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Liveness da API",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "Banco de dados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health/database", "host": ["{{baseUrl}}"], "path": ["health", "database"] }
+          }
+        },
+        {
+          "name": "Redis",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health/redis", "host": ["{{baseUrl}}"], "path": ["health", "redis"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Produtos",
+      "item": [
+        {
+          "name": "Listar produtos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const first = (body.data || [])[0];",
+                  "if (first) pm.collectionVariables.set('productId', first.id);",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?page=1&pageSize=20&sort=relevance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" },
+                { "key": "sort", "value": "relevance" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Busca textual (camiseta preta, masculino)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/search?q=camiseta preta&gender=masculino&excludeGender=infantil&available=true&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "search"],
+              "query": [
+                { "key": "q", "value": "camiseta preta" },
+                { "key": "gender", "value": "masculino" },
+                { "key": "excludeGender", "value": "infantil" },
+                { "key": "available", "value": "true" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Busca com faixa de preço e cor",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/search?q=vestido&color=preto&minPrice=50&maxPrice=200&sort=price_asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "search"],
+              "query": [
+                { "key": "q", "value": "vestido" },
+                { "key": "color", "value": "preto" },
+                { "key": "minPrice", "value": "50" },
+                { "key": "maxPrice", "value": "200" },
+                { "key": "sort", "value": "price_asc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detalhe do produto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "{{productId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categorias",
+      "item": [
+        {
+          "name": "Listar categorias (lista plana)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/categories", "host": ["{{baseUrl}}"], "path": ["api", "v1", "categories"] }
+          }
+        },
+        {
+          "name": "Árvore de categorias",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories?tree=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"],
+              "query": [{ "key": "tree", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "Filhas de uma categoria",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories?parent=roupas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"],
+              "query": [{ "key": "parent", "value": "roupas" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fontes (lojas)",
+      "item": [
+        {
+          "name": "Listar fontes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const first = (body.data || [])[0];",
+                  "if (first) pm.collectionVariables.set('sourceId', first.id);",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/sources", "host": ["{{baseUrl}}"], "path": ["api", "v1", "sources"] }
+          }
+        },
+        {
+          "name": "Detalhe da fonte",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sources/{{sourceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sources", "{{sourceId}}"]
+            }
+          }
+        },
+        {
+          "name": "Ativar/desativar fonte (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sources/{{sourceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sources", "{{sourceId}}"]
+            },
+            "description": "Body parcial: envie só os campos que quer mudar (name, baseUrl, enabled, crawlInterval entre 15 e 10080, maxPages, config). Campos extras são recusados."
+          }
+        },
+        {
+          "name": "Sincronização completa (crawl)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const job = body.data || body;",
+                  "if (job && job.id) pm.collectionVariables.set('crawlJobId', job.id);",
+                  "pm.test('status 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"crawl\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sources/{{sourceId}}/sync",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sources", "{{sourceId}}", "sync"]
+            },
+            "description": "Cria um CrawlJob e enfileira. Retorna rápido; o crawl roda no worker. Se a fonte já tiver um crawl ativo, responde 409 (CRAWL_ALREADY_RUNNING)."
+          }
+        },
+        {
+          "name": "Busca sob demanda (search)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const job = body.data || body;",
+                  "if (job && job.id) pm.collectionVariables.set('crawlJobId', job.id);",
+                  "pm.test('status 2xx', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"search\",\n  \"query\": \"camiseta\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sources/{{sourceId}}/sync",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sources", "{{sourceId}}", "sync"]
+            },
+            "description": "query é obrigatório quando mode = search."
+          }
+        },
+        {
+          "name": "Histórico de jobs da fonte",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sources/{{sourceId}}/jobs?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "sources", "{{sourceId}}", "jobs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Crawl jobs",
+      "item": [
+        {
+          "name": "Andamento de um job",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/crawl-jobs/{{crawlJobId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "crawl-jobs", "{{crawlJobId}}"]
+            },
+            "description": "Acompanhe status (PENDING, RUNNING, COMPLETED, FAILED) e contadores."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Providers (busca ao vivo)",
+      "item": [
+        {
+          "name": "Google Shopping ao vivo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/providers/google-shopping/search?q=camiseta preta&page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "providers", "google-shopping", "search"],
+              "query": [
+                { "key": "q", "value": "camiseta preta" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            },
+            "description": "Só funciona se GOOGLE_SHOPPING_FETCHER estiver habilitado (por padrão está desligado e retorna erro)."
+          }
+        }
+      ]
+    }
+  ]
+}
